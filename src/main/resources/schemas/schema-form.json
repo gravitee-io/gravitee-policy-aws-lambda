@@ -1,0 +1,59 @@
+{
+  "type" : "object",
+  "id" : "urn:jsonschema:io:gravitee:policy:aws:lambda:configuration:AwsLambdaPolicyConfiguration",
+  "properties" : {
+    "scope" : {
+      "title": "Scope",
+      "description": "Execute policy on <strong>request</strong> (HEAD) phase, <strong>response</strong> (HEAD) phase, <strong>request_content</strong> (includes payload) phase, <strong>response content</strong> (includes payload) phase.",
+      "type" : "string",
+      "default": "REQUEST",
+      "enum" : [ "REQUEST", "RESPONSE", "REQUEST_CONTENT", "RESPONSE_CONTENT" ]
+    },
+    "region": {
+      "title": "AWS Region",
+      "description": "AWS Region",
+      "default": "us-east-1",
+      "type" : "string"
+    },
+    "accessKey": {
+      "title": "AWS Access Key",
+      "description": "AWS Access Key",
+      "type" : "string"
+    },
+    "secretKey": {
+      "title": "AWS Secret Key",
+      "description": "AWS Secret Key",
+      "type" : "string"
+    },
+    "function": {
+      "title": "AWS Lambda Function",
+      "description": "AWS Lambda function to call",
+      "type" : "string"
+    },
+    "payload" : {
+      "title": "Lambda request payload",
+      "type" : "string",
+      "x-schema-form": {
+        "type": "codemirror",
+        "codemirrorOptions": {
+          "placeholder": "Put payload here",
+          "lineWrapping": true,
+          "lineNumbers": true,
+          "allowDropFileTypes": true,
+          "autoCloseTags": true
+        }
+      }
+    },
+    "sendToConsumer": {
+      "title": "Send lambda function result to consumer",
+      "description": "Check this option if you want to send the response of the lambda to the initial consumer without going to the final upstream (endpoints) selected by the gateway.",
+      "type" : "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "scope",
+    "region",
+    "function"
+  ]
+}
