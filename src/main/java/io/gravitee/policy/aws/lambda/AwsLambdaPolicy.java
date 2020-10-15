@@ -29,6 +29,8 @@ import io.gravitee.el.TemplateEngine;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Invoker;
 import io.gravitee.gateway.api.buffer.Buffer;
+import io.gravitee.gateway.api.el.EvaluableRequest;
+import io.gravitee.gateway.api.el.EvaluableResponse;
 import io.gravitee.gateway.api.handler.Handler;
 import io.gravitee.gateway.api.proxy.ProxyConnection;
 import io.gravitee.gateway.api.proxy.ProxyResponse;
@@ -44,8 +46,6 @@ import io.gravitee.policy.api.annotations.OnResponse;
 import io.gravitee.policy.api.annotations.OnResponseContent;
 import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import io.gravitee.policy.aws.lambda.configuration.PolicyScope;
-import io.gravitee.policy.aws.lambda.el.EvaluableRequest;
-import io.gravitee.policy.aws.lambda.el.EvaluableResponse;
 import io.gravitee.policy.aws.lambda.el.LambdaResponse;
 
 import java.nio.ByteBuffer;
