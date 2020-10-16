@@ -44,6 +44,30 @@
         }
       }
     },
+    "variables" : {
+      "type" : "array",
+      "title": "Context variables",
+      "items" : {
+        "type" : "object",
+        "id" : "urn:jsonschema:io:gravitee:policy:aws:lambda:configuration:Variable",
+        "title": "Variable",
+        "properties" : {
+          "name" : {
+            "title": "Name",
+            "type" : "string"
+          },
+          "value" : {
+            "title": "Value",
+            "type" : "string",
+            "default": "{#jsonPath(#lambdaResponse.content, '$.field')}"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ]
+    },
     "sendToConsumer": {
       "title": "Send lambda function result to consumer",
       "description": "Check this option if you want to send the response of the lambda to the initial consumer without going to the final upstream (endpoints) selected by the gateway.",

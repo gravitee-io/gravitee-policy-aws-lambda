@@ -25,6 +25,7 @@ import com.amazonaws.services.lambda.model.InvokeResult;
 import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.HttpStatusCode;
 import io.gravitee.common.util.Maps;
+import io.gravitee.el.TemplateEngine;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Invoker;
 import io.gravitee.gateway.api.buffer.Buffer;
@@ -45,6 +46,7 @@ import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import io.gravitee.policy.aws.lambda.configuration.PolicyScope;
 import io.gravitee.policy.aws.lambda.el.EvaluableRequest;
 import io.gravitee.policy.aws.lambda.el.EvaluableResponse;
+import io.gravitee.policy.aws.lambda.el.LambdaResponse;
 
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
@@ -61,6 +63,8 @@ public class AwsLambdaPolicy {
     private final AwsLambdaPolicyConfiguration configuration;
 
     private static AWSLambdaAsync lambdaClient;
+
+    private final static String TEMPLATE_VARIABLE = "lambdaResponse";
 
     private final static String REQUEST_TEMPLATE_VARIABLE = "request";
     private final static String RESPONSE_TEMPLATE_VARIABLE = "response";
@@ -188,6 +192,26 @@ public class AwsLambdaPolicy {
                                     .put("error", result.getFunctionError())
                                     .build()));
                 } else if (result.getStatusCode() >= 200 && result.getStatusCode() < 300) {
+                    TemplateEngine tplEngine = context.getTemplateEngine();
+
+                    // Put response into template variable for EL
+                    tplEngine.getTemplateContext()
+                            .setVariable(TEMPLATE_VARIABLE, new LambdaResponse(result));
+
+                    // Set context variables
+                    if (configuration.getVariables() != null) {
+                        configuration.getVariables().forEach(variable -> {
+                            try {
+                                String extValue = (variable.getValue() != null) ?
+                                        tplEngine.getValue(variable.getValue(), String.class) : null;
+
+                                context.setAttribute(variable.getName(), extValue);
+                            } catch (Exception ex) {
+                                // Do nothing
+                            }
+                        });
+                    }
+
                     onSuccess.accept(result);
                 } else {
                     onError.accept(PolicyResult.failure(

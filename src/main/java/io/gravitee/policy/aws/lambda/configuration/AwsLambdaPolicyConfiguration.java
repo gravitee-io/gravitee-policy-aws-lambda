@@ -17,6 +17,9 @@ package io.gravitee.policy.aws.lambda.configuration;
 
 import io.gravitee.policy.api.PolicyConfiguration;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
  * @author GraviteeSource Team
@@ -32,6 +35,8 @@ public class AwsLambdaPolicyConfiguration implements PolicyConfiguration {
     private String function;
 
     private String payload;
+
+    private List<Variable> variables = new ArrayList<>();
 
     private boolean sendToConsumer;
 
@@ -81,6 +86,14 @@ public class AwsLambdaPolicyConfiguration implements PolicyConfiguration {
 
     public void setFunction(String function) {
         this.function = function;
+    }
+
+    public List<Variable> getVariables() {
+        return variables;
+    }
+
+    public void setVariables(List<Variable> variables) {
+        this.variables = variables;
     }
 
     public boolean isSendToConsumer() {
