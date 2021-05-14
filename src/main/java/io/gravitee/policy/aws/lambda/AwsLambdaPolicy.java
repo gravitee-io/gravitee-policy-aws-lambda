@@ -22,7 +22,6 @@ import com.amazonaws.services.lambda.AWSLambdaAsync;
 import com.amazonaws.services.lambda.AWSLambdaAsyncClientBuilder;
 import com.amazonaws.services.lambda.model.InvokeRequest;
 import com.amazonaws.services.lambda.model.InvokeResult;
-import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.HttpStatusCode;
 import io.gravitee.common.util.Maps;
 import io.gravitee.el.TemplateEngine;
@@ -31,11 +30,7 @@ import io.gravitee.gateway.api.Invoker;
 import io.gravitee.gateway.api.buffer.Buffer;
 import io.gravitee.gateway.api.el.EvaluableRequest;
 import io.gravitee.gateway.api.el.EvaluableResponse;
-import io.gravitee.gateway.api.handler.Handler;
-import io.gravitee.gateway.api.proxy.ProxyConnection;
-import io.gravitee.gateway.api.proxy.ProxyResponse;
 import io.gravitee.gateway.api.stream.BufferedReadWriteStream;
-import io.gravitee.gateway.api.stream.ReadStream;
 import io.gravitee.gateway.api.stream.ReadWriteStream;
 import io.gravitee.gateway.api.stream.SimpleReadWriteStream;
 import io.gravitee.policy.api.PolicyChain;
@@ -47,8 +42,9 @@ import io.gravitee.policy.api.annotations.OnResponseContent;
 import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import io.gravitee.policy.aws.lambda.configuration.PolicyScope;
 import io.gravitee.policy.aws.lambda.el.LambdaResponse;
+import io.vertx.core.Context;
+import io.vertx.core.Vertx;
 
-import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
 /**
@@ -59,6 +55,7 @@ public class AwsLambdaPolicy {
 
     private final static String AWS_LAMBDA_INVALID_STATUS_CODE = "AWS_LAMBDA_INVALID_STATUS_CODE";
     private final static String AWS_LAMBDA_INVALID_RESPONSE = "AWS_LAMBDA_INVALID_RESPONSE";
+    private static final String LAMBDA_RESULT_ATTR = "LAMBDA_RESULT";
 
     private final AwsLambdaPolicyConfiguration configuration;
 
@@ -75,52 +72,61 @@ public class AwsLambdaPolicy {
 
     @OnRequest
     public void onRequest(ExecutionContext context, PolicyChain chain) {
-        execute(context, chain);
+
+
+        if (configuration.getScope() != PolicyScope.REQUEST) {
+            chain.doNext(context.request(), context.response());
+            return;
+        }
+
+        final Context vertxContext = Vertx.currentContext();
+        final Invoker originalInvoker = (Invoker) context.getAttribute(ExecutionContext.ATTR_INVOKER);
+
+        invokeLambda(context, result -> {
+            // Dynamically set the default invoker and provide a custom implementation to returns data from lambda function.
+            context.setAttribute(ExecutionContext.ATTR_INVOKER, new LambdaInvoker(!configuration.isSendToConsumer(), originalInvoker, result));
+
+            // Continue the policy chain.
+            vertxContext.runOnContext(v -> chain.doNext(context.request(), context.response()));
+        }, chain::failWith);
     }
 
     @OnResponse
     public void onResponse(ExecutionContext context, PolicyChain chain) {
-        execute(context, chain);
-    }
 
-    private void execute(ExecutionContext context, PolicyChain chain) {
-        if (configuration.getScope() == PolicyScope.RESPONSE || configuration.getScope() == PolicyScope.REQUEST) {
-            invokeLambda(context, result -> {
-                if (configuration.isSendToConsumer()) {
-                    // Dynamically set the default invoker and provide a custom implementation
-                    // to returns data from lambda function.
-                    context.setAttribute(ExecutionContext.ATTR_INVOKER, new LambdaInvoker(result));
-                }
-
-                chain.doNext(context.request(), context.response());
-            }, chain::failWith);
-        } else {
+        if (configuration.getScope() != PolicyScope.RESPONSE) {
             chain.doNext(context.request(), context.response());
+            return;
         }
+
+        final Context vertxContext = Vertx.currentContext();
+
+        invokeLambda(context, result -> {
+            if (configuration.isSendToConsumer()) {
+                if (configuration.isSendToConsumer()) {
+                    // Save the lambda result for later reuse in the response content phase (eg: to override the response).
+                    context.setAttribute(LAMBDA_RESULT_ATTR, result);
+                }
+            }
+
+            vertxContext.runOnContext(v -> chain.doNext(context.request(), context.response()));
+        }, chain::failWith);
     }
 
     @OnRequestContent
-    public ReadWriteStream onRequestContent(ExecutionContext context, PolicyChain policyChain) {
-        if (configuration.getScope() == PolicyScope.REQUEST_CONTENT) {
-            return createStream(PolicyScope.REQUEST_CONTENT, context, policyChain);
+    public ReadWriteStream<Buffer> onRequestContent(ExecutionContext context, PolicyChain chain) {
+
+        if (configuration.getScope() != PolicyScope.REQUEST_CONTENT) {
+            return null;
         }
 
-        return null;
-    }
+        final Invoker originalInvoker = (Invoker) context.getAttribute(ExecutionContext.ATTR_INVOKER);
+        final LambdaInvoker lambdaInvoker = new LambdaInvoker(!configuration.isSendToConsumer(), originalInvoker);
+        context.setAttribute(ExecutionContext.ATTR_INVOKER, lambdaInvoker);
 
-    @OnResponseContent
-    public ReadWriteStream onResponseContent(ExecutionContext context, PolicyChain policyChain) {
-        if (configuration.getScope() == PolicyScope.RESPONSE_CONTENT) {
-            return createStream(PolicyScope.RESPONSE_CONTENT, context, policyChain);
-        }
-
-        return null;
-    }
-
-    private ReadWriteStream createStream(PolicyScope scope, ExecutionContext context, PolicyChain policyChain) {
         return new BufferedReadWriteStream() {
 
-            io.gravitee.gateway.api.buffer.Buffer buffer = io.gravitee.gateway.api.buffer.Buffer.buffer();
+            final io.gravitee.gateway.api.buffer.Buffer buffer = io.gravitee.gateway.api.buffer.Buffer.buffer();
 
             @Override
             public SimpleReadWriteStream<Buffer> write(io.gravitee.gateway.api.buffer.Buffer content) {
@@ -131,20 +137,66 @@ public class AwsLambdaPolicy {
             @Override
             public void end() {
                 context.getTemplateEngine().getTemplateContext()
-                        .setVariable(REQUEST_TEMPLATE_VARIABLE, new EvaluableRequest(context.request(),
-                                (scope == PolicyScope.REQUEST_CONTENT) ? buffer.toString() : null));
-
-                context.getTemplateEngine().getTemplateContext()
-                        .setVariable(RESPONSE_TEMPLATE_VARIABLE, new EvaluableResponse(context.response(),
-                                (scope == PolicyScope.RESPONSE_CONTENT) ? buffer.toString() : null));
+                        .setVariable(REQUEST_TEMPLATE_VARIABLE, new EvaluableRequest(context.request(), buffer.toString()));
 
                 invokeLambda(context, result -> {
+                    if (configuration.isSendToConsumer()) {
+                        // Provide the lambda result and let the invoker propagate it to the client.
+                        lambdaInvoker.setInvokeResult(result);
+                    }
+
                     if (buffer.length() > 0) {
                         super.write(buffer);
                     }
 
                     super.end();
-                }, policyChain::streamFailWith);
+                }, chain::streamFailWith);
+            }
+        };
+    }
+
+    @OnResponseContent
+    public ReadWriteStream<Buffer> onResponseContent(ExecutionContext context, PolicyChain chain) {
+        if (configuration.getScope() != PolicyScope.RESPONSE_CONTENT && configuration.getScope() != PolicyScope.RESPONSE) {
+            return null;
+        }
+
+        return new BufferedReadWriteStream() {
+            final io.gravitee.gateway.api.buffer.Buffer buffer = io.gravitee.gateway.api.buffer.Buffer.buffer();
+
+            @Override
+            public SimpleReadWriteStream<Buffer> write(io.gravitee.gateway.api.buffer.Buffer content) {
+                buffer.appendBuffer(content);
+                return this;
+            }
+
+            @Override
+            public void end() {
+                context.getTemplateEngine().getTemplateContext()
+                        .setVariable(RESPONSE_TEMPLATE_VARIABLE, new EvaluableResponse(context.response(), buffer.toString()));
+
+                final InvokeResult lambdaResult = (InvokeResult) context.getAttribute(LAMBDA_RESULT_ATTR);
+                context.removeAttribute(LAMBDA_RESULT_ATTR);
+
+                if (configuration.getScope() == PolicyScope.RESPONSE) {
+                    // Reuse the lambda response we've got during the response phase and propagate it back to the client.
+                    if (configuration.isSendToConsumer() && lambdaResult != null) {
+                        super.write(Buffer.buffer(lambdaResult.getPayload().array()));
+                    } else if (buffer.length() > 0) {
+                        super.write(buffer);
+                    }
+                    super.end();
+                } else {
+                    invokeLambda(context, result -> {
+                        if (configuration.isSendToConsumer()) {
+                            super.write(Buffer.buffer(result.getPayload().array()));
+                        } else if (buffer.length() > 0) {
+                            super.write(buffer);
+                        }
+
+                        super.end();
+                    }, chain::streamFailWith);
+                }
             }
         };
     }
@@ -168,7 +220,7 @@ public class AwsLambdaPolicy {
                 onError.accept(PolicyResult.failure(
                         AWS_LAMBDA_INVALID_RESPONSE,
                         HttpStatusCode.INTERNAL_SERVER_ERROR_500,
-                        "An error occurs while invoking lambda function.",
+                        "An error occurs while invoking lambda function. Details: [" + ex.getMessage() + "]",
                         Maps.<String, Object>builder()
                                 .put("function", configuration.getFunction())
                                 .put("region", configuration.getRegion())
@@ -253,119 +305,5 @@ public class AwsLambdaPolicy {
         }
 
         return lambdaClient;
-    }
-
-    class LambdaInvoker implements Invoker {
-
-        private final InvokeResult result;
-
-        LambdaInvoker(final InvokeResult result) {
-            this.result = result;
-        }
-
-        @Override
-        public void invoke(ExecutionContext context, ReadStream<Buffer> stream, Handler<ProxyConnection> connectionHandler) {
-            final ProxyConnection proxyConnection = new LambdaProxyConnection(result);
-
-            // Return connection to backend
-            connectionHandler.handle(proxyConnection);
-
-            // Plug underlying stream to connection stream
-            stream
-                    .bodyHandler(proxyConnection::write)
-                    .endHandler(aVoid -> proxyConnection.end());
-
-            // Resume the incoming request to handle content and end
-            context.request().resume();
-        }
-    }
-
-    class LambdaProxyConnection implements ProxyConnection {
-
-        private final InvokeResult result;
-        private Handler<ProxyResponse> proxyResponseHandler;
-        private Buffer content;
-
-        LambdaProxyConnection(final InvokeResult result) {
-            this.result = result;
-        }
-
-        @Override
-        public ProxyConnection write(Buffer chunk) {
-            if (content == null) {
-                content = Buffer.buffer();
-            }
-            content.appendBuffer(chunk);
-            return this;
-        }
-
-        @Override
-        public void end() {
-            proxyResponseHandler.handle(
-                    new LambdaClientResponse(result));
-        }
-
-        @Override
-        public ProxyConnection responseHandler(Handler<ProxyResponse> responseHandler) {
-            this.proxyResponseHandler = responseHandler;
-            return this;
-        }
-    }
-
-    class LambdaClientResponse implements ProxyResponse {
-
-        private final InvokeResult result;
-
-        private final HttpHeaders headers = new HttpHeaders();
-
-        private Handler<Buffer> bodyHandler;
-        private Handler<Void> endHandler;
-
-        LambdaClientResponse(final InvokeResult result) {
-            this.result = result;
-            this.init();
-        }
-
-        private void init() {
-            ByteBuffer payload = result.getPayload();
-
-            if (payload != null) {
-                headers.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(payload.array().length));
-            }
-        }
-
-        @Override
-        public int status() {
-            return result.getStatusCode();
-        }
-
-        @Override
-        public HttpHeaders headers() {
-            return headers;
-        }
-
-        @Override
-        public ProxyResponse bodyHandler(Handler<Buffer> bodyHandler) {
-            this.bodyHandler = bodyHandler;
-            return this;
-        }
-
-        @Override
-        public ProxyResponse endHandler(Handler<Void> endHandler) {
-            this.endHandler = endHandler;
-            return this;
-        }
-
-        @Override
-        public ReadStream<Buffer> resume() {
-            ByteBuffer payload = result.getPayload();
-
-            if (payload != null) {
-                bodyHandler.handle(Buffer.buffer(payload.array()));
-            }
-
-            endHandler.handle(null);
-            return this;
-        }
     }
 }

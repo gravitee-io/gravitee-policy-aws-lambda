@@ -1,0 +1,21 @@
+= AWS Lambda
+
+== Phase
+
+[cols="4*", options="header"]
+|===
+^|onRequest
+^|onResponse
+^|onRequestContent
+^|onResponseContent
+
+^.^| X
+^.^| X
+^.^| X
+^.^| X
+
+|===
+
+== Description
+
+AWS Lambda allows to request Lambda instead of or in addition to the backend.
