@@ -36,6 +36,99 @@ orbs:
   secrethub: secrethub/cli@1.1.0
   # secrethub: secrethub/cli@1.0.0
 
+jobs:
+
+  package_bundle:
+    docker:
+      - image: 'cimg/node:16.3.0'
+    environment:
+      SECRETS_FOLDER: '/tmp/gravit33bot/.secrets'
+    
+
+
+    steps:
+      #- checkout
+      # /tmp/package-bundle-resources/*.zip persisted to workspace by  [standalone release]
+      # also secrets
+      # also /tmp/gio.maven.project.release.version
+
+      - run:
+          name: "test"
+          command: |
+                    pwd 
+                    ls -alh
+      - attach_workspace:
+          at: /tmp
+      - run:
+          name: "Check release_version_file_helper retrieved from Pipeline workspace"
+          command: |
+                    ls -alh /tmp/gio.maven.project.release.version
+                    export GIO_RELEASE_VERSION=$(cat /tmp/gio.maven.project.release.version)
+                    echo "GIO_RELEASE_VERSION=[${GIO_RELEASE_VERSION}]"
+                    echo "export GIO_RELEASE_VERSION=${GIO_RELEASE_VERSION}" >> $BASH_ENV
+      - run:
+          name: "Check GIO_RELEASE_VERSION is well defined in Pipeline BASH_ENV"
+          command: |
+                    echo "GIO_RELEASE_VERSION=[${GIO_RELEASE_VERSION}]"
+                    if [ "x${GIO_RELEASE_VERSION}" == "x" ]; then
+                      echo "GIO_RELEASE_VERSION env.var is not set, but is expected to be"
+                      exit 3
+                    fi;
+      - run:
+          name: "Check bundled *.zip persisted to Pipeline workspace"
+          command: |
+                    echo "# ---------------------------------------------------------------------- #"
+                    echo "# - Check gravitee-policy-http-signature bundled *.zip persisted to Pipeline workspace"
+                    echo "# ---------------------------------------------------------------------- #"
+                    ls -allh /tmp/package-bundle-resources/
+                    ls -allh /tmp/package-bundle-resources/*.zip
+                    echo "# ---------------------------------------------------------------------- #"
+                    find /tmp/package-bundle-resources -wholename '/tmp/package-bundle-resources/*.zip'
+      - run:
+          name: "Check secrets retrieved from Pipeline workspace"
+          command: |
+                    echo "# ---------------------------------------------------------------------- #"
+                    echo "# - # Check secrets retrieved from Pipeline workspace"
+                    echo "# ---------------------------------------------------------------------- #"
+                    ls -allh ${SECRETS_FOLDER}/dry.release.settings.xml
+                    ls -allh ${SECRETS_FOLDER}/non.dry.release.settings.xml
+                    ls -allh ${SECRETS_FOLDER}/nexus.staging.settings.xml
+                    ls -allh ${SECRETS_FOLDER}/.s3cmd/aws_access_key
+                    ls -allh ${SECRETS_FOLDER}/.s3cmd/aws_secret_key
+                    ls -allh ${SECRETS_FOLDER}/.gungpg/graviteebot.gpg.pub.key
+                    ls -allh ${SECRETS_FOLDER}/.gungpg/graviteebot.gpg.priv.key
+                    ls -allh ${SECRETS_FOLDER}/git_user_name
+                    ls -allh ${SECRETS_FOLDER}/git_user_email
+                    ls -allh ${SECRETS_FOLDER}/dockerhub/user_name
+                    ls -allh ${SECRETS_FOLDER}/dockerhub/user_token
+                    echo "# ---------------------------------------------------------------------- #"
+                    ls -allh ${SECRETS_FOLDER}/git_ssh_pub_key
+                    ls -allh ${SECRETS_FOLDER}/git_ssh_private_key
+                    echo "# ---------------------------------------------------------------------- #"
+
+      - run:
+          name: "generate /tmp/gio.maven.project.release.version"
+          command: |
+                    echo "$GIO_RELEASE_VERSION"  >  /tmp/gio.maven.project.release.version
+
+      - setup_remote_docker
+          # ---
+      # Package Bundle must publish https://download.gravitee.io/#graviteeio-apim/plugins/policies/gravitee-policy-aws-lambda/gravitee-policy-aws-lambda-${GIO_RELEASE_VERSION}.zip
+      #
+      #
+      #   /tmp/package-bundle-resources/gravitee-policy-aws-lambda-${GIO_RELEASE_VERSION}.zip  ===>> https://download.gravitee.io/#graviteeio-apim/plugins/policies/gravitee-policy-aws-lambda/gravitee-policy-aws-lambda-${GIO_RELEASE_VERSION}.zip
+      #
+      #
+      - gravitee/d_publish_package_bundle_unit:       
+          dry_run: << pipeline.parameters.dry_run >>
+          zip_file_path:  /tmp/package-bundle-resources/gravitee-policy-aws-lambda-GIO_VERSION_PLACEHOLDER.zip
+          # zip_file_path: /tmp/ae-main-zip-bundle-repackage/gravitee-policy-http-signature-GIO_VERSION_PLACEHOLDER.zip
+          publish_folder_path: graviteeio-apim/plugins/policies/gravitee-policy-aws-lambda
+          publish_zip_filename: gravitee-policy-aws-lambda-GIO_VERSION_PLACEHOLDER.zip
+          release_version_file_helper: /tmp/gio.maven.project.release.version
+          s3_bucket_name: "gravitee-releases-downloads"
+          placeholder: GIO_VERSION_PLACEHOLDER
+
 workflows:
   version: 2.1
   # -- typically this workflow is executed on pull requests events for Community Edition Gravitee Repositories
@@ -154,6 +247,9 @@ workflows:
           # container_gun_image_name: 'openjdk'
           # container_gun_image_tag: '11.0.3-jdk-stretch'
           container_size: 'large'
+      - package_bundle:
+          requires:
+            - maven_n_git_release   
 
   standalone_release_dry_run:
     when:
@@ -175,6 +271,9 @@ workflows:
           # container_gun_image_name: 'openjdk'
           # container_gun_image_tag: '11.0.3-jdk-stretch'
           container_size: 'large'
+      - package_bundle:
+          requires:
+            - maven_n_git_release
 
   standalone_nexus_staging:
     # ---
@@ -264,7 +363,7 @@ workflows:
           name: maven_n_git_release
           requires:
             - release_secrets_resolution
-          dry_run: true
+          dry_run: << pipeline.parameters.dry_run >>
           maven_profile_id: << pipeline.parameters.maven_profile_id >>
           s3_bucket_name: << pipeline.parameters.s3_bucket_name >>
           gio_release_version: << pipeline.parameters.replayed_release >>
