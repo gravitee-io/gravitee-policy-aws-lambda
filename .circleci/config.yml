@@ -301,7 +301,7 @@ workflows:
           requires:
             - maven_n_git_release
 
-     - gravitee/d_standalone_release_qa:
+      - gravitee/d_standalone_release_qa:
           name: maven_n_git_release
           requires:
             - release_secrets_resolution
