@@ -156,6 +156,19 @@ workflows:
             # branches:
               # ignore:
                 # - master
+
+      - gravitee/d_pull_requests_ce_qa:
+          context: gravitee-qa
+          name: process_pull_request_qa
+          requires:
+            - pr_secrets_resolution
+          # "What is the maven ID of the maven profile to use to build and deploy SNAPSHOTS to Prviate Artifactory ?"
+          maven_profile_id: 'gio-dev'
+          container_size: 'medium'
+          filters:
+            branches:
+              ignore:
+                - master
   # ---
   # The 2 Workflows Below are there for the CICD Orchestrator to be able to
   # release Gravitee Kubernetes in an APIM release Process, with Docker executors instead of VMs
@@ -251,6 +264,19 @@ workflows:
           requires:
             - maven_n_git_release   
 
+      - gravitee/d_standalone_release_qa:
+          name: maven_n_git_release
+          requires:
+            - release_secrets_resolution
+          dry_run: true
+          maven_profile_id: << pipeline.parameters.maven_profile_id >>
+          s3_bucket_name: << pipeline.parameters.s3_bucket_name >>
+          # container_gun_image_org: 'circleci'
+          # container_gun_image_name: 'openjdk'
+          # container_gun_image_tag: '11.0.3-jdk-stretch'
+          container_size: 'large'
+      
+
   standalone_release_dry_run:
     when:
       and:
@@ -274,6 +300,18 @@ workflows:
       - package_bundle:
           requires:
             - maven_n_git_release
+
+     - gravitee/d_standalone_release_qa:
+          name: maven_n_git_release
+          requires:
+            - release_secrets_resolution
+          dry_run: true
+          maven_profile_id: << pipeline.parameters.maven_profile_id >>
+          s3_bucket_name: << pipeline.parameters.s3_bucket_name >>
+          # container_gun_image_org: 'circleci'
+          # container_gun_image_name: 'openjdk'
+          # container_gun_image_tag: '11.0.3-jdk-stretch'
+          container_size: 'large' 
 
   standalone_nexus_staging:
     # ---
