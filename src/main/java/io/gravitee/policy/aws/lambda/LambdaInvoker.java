@@ -16,11 +16,12 @@
 package io.gravitee.policy.aws.lambda;
 
 import com.amazonaws.services.lambda.model.InvokeResult;
-import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Invoker;
 import io.gravitee.gateway.api.buffer.Buffer;
 import io.gravitee.gateway.api.handler.Handler;
+import io.gravitee.gateway.api.http.HttpHeaderNames;
+import io.gravitee.gateway.api.http.HttpHeaders;
 import io.gravitee.gateway.api.proxy.ProxyConnection;
 import io.gravitee.gateway.api.proxy.ProxyResponse;
 import io.gravitee.gateway.api.stream.ReadStream;
@@ -113,7 +114,7 @@ public class LambdaInvoker implements Invoker {
 
     class LambdaClientResponse implements ProxyResponse {
 
-        private final HttpHeaders headers = new HttpHeaders();
+        private final HttpHeaders headers = HttpHeaders.create();
 
         private Handler<Buffer> bodyHandler;
         private Handler<Void> endHandler;
@@ -126,7 +127,7 @@ public class LambdaInvoker implements Invoker {
             ByteBuffer payload = invokeResult.getPayload();
 
             if (payload != null) {
-                headers.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(payload.array().length));
+                headers.set(HttpHeaderNames.CONTENT_LENGTH, Integer.toString(payload.array().length));
             }
         }
 
