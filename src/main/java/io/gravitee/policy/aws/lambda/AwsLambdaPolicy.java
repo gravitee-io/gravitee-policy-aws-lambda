@@ -59,7 +59,7 @@ public class AwsLambdaPolicy {
 
     private final AwsLambdaPolicyConfiguration configuration;
 
-    private static AWSLambdaAsync lambdaClient;
+    private final AWSLambdaAsync lambdaClient;
 
     private final static String TEMPLATE_VARIABLE = "lambdaResponse";
 
@@ -68,11 +68,11 @@ public class AwsLambdaPolicy {
 
     public AwsLambdaPolicy(AwsLambdaPolicyConfiguration configuration) {
         this.configuration = configuration;
+        lambdaClient = initLambdaClient();
     }
 
     @OnRequest
     public void onRequest(ExecutionContext context, PolicyChain chain) {
-
 
         if (configuration.getScope() != PolicyScope.REQUEST) {
             chain.doNext(context.request(), context.response());
@@ -202,8 +202,6 @@ public class AwsLambdaPolicy {
     }
 
     private void invokeLambda(ExecutionContext context, Consumer<InvokeResult> onSuccess, Consumer<PolicyResult> onError) {
-        AWSLambdaAsync lambdaClient = getLambdaClient();
-
         InvokeRequest request = new InvokeRequest()
                 .withFunctionName(configuration.getFunction());
 
@@ -280,30 +278,26 @@ public class AwsLambdaPolicy {
         });
     }
 
-    private AWSLambdaAsync getLambdaClient() {
-        if (lambdaClient == null) {
-            // initialize the lambda client
-            AWSLambdaAsyncClientBuilder clientBuilder;
-            BasicAWSCredentials credentials = null;
+    private AWSLambdaAsync initLambdaClient() {
+        // initialize the lambda client
+        AWSLambdaAsyncClientBuilder clientBuilder;
+        BasicAWSCredentials credentials = null;
 
-            if (configuration.getAccessKey() != null && !configuration.getAccessKey().isEmpty() &&
-                    configuration.getSecretKey() != null && !configuration.getSecretKey().isEmpty()) {
-                credentials = new BasicAWSCredentials(configuration.getAccessKey(), configuration.getSecretKey());
-            }
-
-            if (credentials != null) {
-                // {@see http://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html}
-                clientBuilder = AWSLambdaAsyncClientBuilder.standard()
-                        .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                        .withRegion(configuration.getRegion());
-            } else {
-                clientBuilder = AWSLambdaAsyncClientBuilder.standard()
-                        .withRegion(configuration.getRegion());
-            }
-
-            lambdaClient = clientBuilder.build();
+        if (configuration.getAccessKey() != null && !configuration.getAccessKey().isEmpty() &&
+                configuration.getSecretKey() != null && !configuration.getSecretKey().isEmpty()) {
+            credentials = new BasicAWSCredentials(configuration.getAccessKey(), configuration.getSecretKey());
         }
 
-        return lambdaClient;
+        if (credentials != null) {
+            // {@see http://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html}
+            clientBuilder = AWSLambdaAsyncClientBuilder.standard()
+                    .withCredentials(new AWSStaticCredentialsProvider(credentials))
+                    .withRegion(configuration.getRegion());
+        } else {
+            clientBuilder = AWSLambdaAsyncClientBuilder.standard()
+                    .withRegion(configuration.getRegion());
+        }
+
+        return clientBuilder.build();
     }
 }
