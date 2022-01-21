@@ -25,7 +25,6 @@ import io.gravitee.gateway.api.http.HttpHeaders;
 import io.gravitee.gateway.api.proxy.ProxyConnection;
 import io.gravitee.gateway.api.proxy.ProxyResponse;
 import io.gravitee.gateway.api.stream.ReadStream;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -54,7 +53,6 @@ public class LambdaInvoker implements Invoker {
 
     @Override
     public void invoke(ExecutionContext context, ReadStream<Buffer> stream, Handler<ProxyConnection> connectionHandler) {
-
         // We have to skip the original invoker if isSendToConsumer is true
         if (!invokeDelegate) {
             // Replace the proxy response with the lambda response.
@@ -64,9 +62,7 @@ public class LambdaInvoker implements Invoker {
             connectionHandler.handle(proxyConnection);
 
             // Plug underlying stream to connection stream
-            stream
-                    .bodyHandler(proxyConnection::write)
-                    .endHandler(aVoid -> proxyConnection.end());
+            stream.bodyHandler(proxyConnection::write).endHandler(aVoid -> proxyConnection.end());
 
             // Resume the incoming request to handle content and end
             context.request().resume();
@@ -88,8 +84,7 @@ public class LambdaInvoker implements Invoker {
         private Handler<ProxyResponse> proxyResponseHandler;
         private Buffer content;
 
-        LambdaProxyConnection() {
-        }
+        LambdaProxyConnection() {}
 
         @Override
         public ProxyConnection write(Buffer chunk) {

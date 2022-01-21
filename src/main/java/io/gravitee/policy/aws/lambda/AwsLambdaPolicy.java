@@ -44,7 +44,6 @@ import io.gravitee.policy.aws.lambda.configuration.PolicyScope;
 import io.gravitee.policy.aws.lambda.el.LambdaResponse;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
-
 import java.util.function.Consumer;
 
 /**
@@ -53,18 +52,18 @@ import java.util.function.Consumer;
  */
 public class AwsLambdaPolicy {
 
-    private final static String AWS_LAMBDA_INVALID_STATUS_CODE = "AWS_LAMBDA_INVALID_STATUS_CODE";
-    private final static String AWS_LAMBDA_INVALID_RESPONSE = "AWS_LAMBDA_INVALID_RESPONSE";
+    private static final String AWS_LAMBDA_INVALID_STATUS_CODE = "AWS_LAMBDA_INVALID_STATUS_CODE";
+    private static final String AWS_LAMBDA_INVALID_RESPONSE = "AWS_LAMBDA_INVALID_RESPONSE";
     private static final String LAMBDA_RESULT_ATTR = "LAMBDA_RESULT";
 
     private final AwsLambdaPolicyConfiguration configuration;
 
     private final AWSLambdaAsync lambdaClient;
 
-    private final static String TEMPLATE_VARIABLE = "lambdaResponse";
+    private static final String TEMPLATE_VARIABLE = "lambdaResponse";
 
-    private final static String REQUEST_TEMPLATE_VARIABLE = "request";
-    private final static String RESPONSE_TEMPLATE_VARIABLE = "response";
+    private static final String REQUEST_TEMPLATE_VARIABLE = "request";
+    private static final String RESPONSE_TEMPLATE_VARIABLE = "response";
 
     public AwsLambdaPolicy(AwsLambdaPolicyConfiguration configuration) {
         this.configuration = configuration;
@@ -73,7 +72,6 @@ public class AwsLambdaPolicy {
 
     @OnRequest
     public void onRequest(ExecutionContext context, PolicyChain chain) {
-
         if (configuration.getScope() != PolicyScope.REQUEST) {
             chain.doNext(context.request(), context.response());
             return;
@@ -82,18 +80,24 @@ public class AwsLambdaPolicy {
         final Context vertxContext = Vertx.currentContext();
         final Invoker originalInvoker = (Invoker) context.getAttribute(ExecutionContext.ATTR_INVOKER);
 
-        invokeLambda(context, result -> {
-            // Dynamically set the default invoker and provide a custom implementation to returns data from lambda function.
-            context.setAttribute(ExecutionContext.ATTR_INVOKER, new LambdaInvoker(!configuration.isSendToConsumer(), originalInvoker, result));
+        invokeLambda(
+            context,
+            result -> {
+                // Dynamically set the default invoker and provide a custom implementation to returns data from lambda function.
+                context.setAttribute(
+                    ExecutionContext.ATTR_INVOKER,
+                    new LambdaInvoker(!configuration.isSendToConsumer(), originalInvoker, result)
+                );
 
-            // Continue the policy chain.
-            vertxContext.runOnContext(v -> chain.doNext(context.request(), context.response()));
-        }, chain::failWith);
+                // Continue the policy chain.
+                vertxContext.runOnContext(v -> chain.doNext(context.request(), context.response()));
+            },
+            chain::failWith
+        );
     }
 
     @OnResponse
     public void onResponse(ExecutionContext context, PolicyChain chain) {
-
         if (configuration.getScope() != PolicyScope.RESPONSE) {
             chain.doNext(context.request(), context.response());
             return;
@@ -101,21 +105,24 @@ public class AwsLambdaPolicy {
 
         final Context vertxContext = Vertx.currentContext();
 
-        invokeLambda(context, result -> {
-            if (configuration.isSendToConsumer()) {
+        invokeLambda(
+            context,
+            result -> {
                 if (configuration.isSendToConsumer()) {
-                    // Save the lambda result for later reuse in the response content phase (eg: to override the response).
-                    context.setAttribute(LAMBDA_RESULT_ATTR, result);
+                    if (configuration.isSendToConsumer()) {
+                        // Save the lambda result for later reuse in the response content phase (eg: to override the response).
+                        context.setAttribute(LAMBDA_RESULT_ATTR, result);
+                    }
                 }
-            }
 
-            vertxContext.runOnContext(v -> chain.doNext(context.request(), context.response()));
-        }, chain::failWith);
+                vertxContext.runOnContext(v -> chain.doNext(context.request(), context.response()));
+            },
+            chain::failWith
+        );
     }
 
     @OnRequestContent
     public ReadWriteStream<Buffer> onRequestContent(ExecutionContext context, PolicyChain chain) {
-
         if (configuration.getScope() != PolicyScope.REQUEST_CONTENT) {
             return null;
         }
@@ -125,7 +132,6 @@ public class AwsLambdaPolicy {
         context.setAttribute(ExecutionContext.ATTR_INVOKER, lambdaInvoker);
 
         return new BufferedReadWriteStream() {
-
             final io.gravitee.gateway.api.buffer.Buffer buffer = io.gravitee.gateway.api.buffer.Buffer.buffer();
 
             @Override
@@ -136,21 +142,27 @@ public class AwsLambdaPolicy {
 
             @Override
             public void end() {
-                context.getTemplateEngine().getTemplateContext()
-                        .setVariable(REQUEST_TEMPLATE_VARIABLE, new EvaluableRequest(context.request(), buffer.toString()));
+                context
+                    .getTemplateEngine()
+                    .getTemplateContext()
+                    .setVariable(REQUEST_TEMPLATE_VARIABLE, new EvaluableRequest(context.request(), buffer.toString()));
 
-                invokeLambda(context, result -> {
-                    if (configuration.isSendToConsumer()) {
-                        // Provide the lambda result and let the invoker propagate it to the client.
-                        lambdaInvoker.setInvokeResult(result);
-                    }
+                invokeLambda(
+                    context,
+                    result -> {
+                        if (configuration.isSendToConsumer()) {
+                            // Provide the lambda result and let the invoker propagate it to the client.
+                            lambdaInvoker.setInvokeResult(result);
+                        }
 
-                    if (buffer.length() > 0) {
-                        super.write(buffer);
-                    }
+                        if (buffer.length() > 0) {
+                            super.write(buffer);
+                        }
 
-                    super.end();
-                }, chain::streamFailWith);
+                        super.end();
+                    },
+                    chain::streamFailWith
+                );
             }
         };
     }
@@ -172,8 +184,10 @@ public class AwsLambdaPolicy {
 
             @Override
             public void end() {
-                context.getTemplateEngine().getTemplateContext()
-                        .setVariable(RESPONSE_TEMPLATE_VARIABLE, new EvaluableResponse(context.response(), buffer.toString()));
+                context
+                    .getTemplateEngine()
+                    .getTemplateContext()
+                    .setVariable(RESPONSE_TEMPLATE_VARIABLE, new EvaluableResponse(context.response(), buffer.toString()));
 
                 final InvokeResult lambdaResult = (InvokeResult) context.getAttribute(LAMBDA_RESULT_ATTR);
                 context.removeAttribute(LAMBDA_RESULT_ATTR);
@@ -187,23 +201,26 @@ public class AwsLambdaPolicy {
                     }
                     super.end();
                 } else {
-                    invokeLambda(context, result -> {
-                        if (configuration.isSendToConsumer()) {
-                            super.write(Buffer.buffer(result.getPayload().array()));
-                        } else if (buffer.length() > 0) {
-                            super.write(buffer);
-                        }
+                    invokeLambda(
+                        context,
+                        result -> {
+                            if (configuration.isSendToConsumer()) {
+                                super.write(Buffer.buffer(result.getPayload().array()));
+                            } else if (buffer.length() > 0) {
+                                super.write(buffer);
+                            }
 
-                        super.end();
-                    }, chain::streamFailWith);
+                            super.end();
+                        },
+                        chain::streamFailWith
+                    );
                 }
             }
         };
     }
 
     private void invokeLambda(ExecutionContext context, Consumer<InvokeResult> onSuccess, Consumer<PolicyResult> onError) {
-        InvokeRequest request = new InvokeRequest()
-                .withFunctionName(configuration.getFunction());
+        InvokeRequest request = new InvokeRequest().withFunctionName(configuration.getFunction());
 
         if (configuration.getPayload() != null && !configuration.getPayload().isEmpty()) {
             String payload = context.getTemplateEngine().getValue(configuration.getPayload(), String.class);
@@ -212,70 +229,87 @@ public class AwsLambdaPolicy {
 
         // invoke the lambda function and inspect the result...
         // {@see http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/lambda/model/InvokeResult.html}
-        lambdaClient.invokeAsync(request, new AsyncHandler<InvokeRequest, InvokeResult>() {
-            @Override
-            public void onError(Exception ex) {
-                onError.accept(PolicyResult.failure(
-                        AWS_LAMBDA_INVALID_RESPONSE,
-                        HttpStatusCode.INTERNAL_SERVER_ERROR_500,
-                        "An error occurs while invoking lambda function. Details: [" + ex.getMessage() + "]",
-                        Maps.<String, Object>builder()
+        lambdaClient.invokeAsync(
+            request,
+            new AsyncHandler<InvokeRequest, InvokeResult>() {
+                @Override
+                public void onError(Exception ex) {
+                    onError.accept(
+                        PolicyResult.failure(
+                            AWS_LAMBDA_INVALID_RESPONSE,
+                            HttpStatusCode.INTERNAL_SERVER_ERROR_500,
+                            "An error occurs while invoking lambda function. Details: [" + ex.getMessage() + "]",
+                            Maps
+                                .<String, Object>builder()
                                 .put("function", configuration.getFunction())
                                 .put("region", configuration.getRegion())
                                 .put("error", ex.getMessage())
-                                .build()));
-            }
+                                .build()
+                        )
+                    );
+                }
 
-            @Override
-            public void onSuccess(InvokeRequest request, InvokeResult result) {
-                // Lambda will return an HTTP status code will be in the 200 range for successful
-                // request, even if an error occurred in the Lambda function itself. Here, we check
-                // if an error occurred via getFunctionError() before checking the status code.
-                if ("Handled".equals(result.getFunctionError()) || "Unhandled".equals(result.getFunctionError())) {
-                    onError.accept(PolicyResult.failure(
-                            AWS_LAMBDA_INVALID_RESPONSE,
-                            HttpStatusCode.INTERNAL_SERVER_ERROR_500,
-                            "An error occurs while invoking lambda function.",
-                            Maps.<String, Object>builder()
+                @Override
+                public void onSuccess(InvokeRequest request, InvokeResult result) {
+                    // Lambda will return an HTTP status code will be in the 200 range for successful
+                    // request, even if an error occurred in the Lambda function itself. Here, we check
+                    // if an error occurred via getFunctionError() before checking the status code.
+                    if ("Handled".equals(result.getFunctionError()) || "Unhandled".equals(result.getFunctionError())) {
+                        onError.accept(
+                            PolicyResult.failure(
+                                AWS_LAMBDA_INVALID_RESPONSE,
+                                HttpStatusCode.INTERNAL_SERVER_ERROR_500,
+                                "An error occurs while invoking lambda function.",
+                                Maps
+                                    .<String, Object>builder()
                                     .put("function", configuration.getFunction())
                                     .put("region", configuration.getRegion())
                                     .put("error", result.getFunctionError())
-                                    .build()));
-                } else if (result.getStatusCode() >= 200 && result.getStatusCode() < 300) {
-                    TemplateEngine tplEngine = context.getTemplateEngine();
+                                    .build()
+                            )
+                        );
+                    } else if (result.getStatusCode() >= 200 && result.getStatusCode() < 300) {
+                        TemplateEngine tplEngine = context.getTemplateEngine();
 
-                    // Put response into template variable for EL
-                    tplEngine.getTemplateContext()
-                            .setVariable(TEMPLATE_VARIABLE, new LambdaResponse(result));
+                        // Put response into template variable for EL
+                        tplEngine.getTemplateContext().setVariable(TEMPLATE_VARIABLE, new LambdaResponse(result));
 
-                    // Set context variables
-                    if (configuration.getVariables() != null) {
-                        configuration.getVariables().forEach(variable -> {
-                            try {
-                                String extValue = (variable.getValue() != null) ?
-                                        tplEngine.getValue(variable.getValue(), String.class) : null;
+                        // Set context variables
+                        if (configuration.getVariables() != null) {
+                            configuration
+                                .getVariables()
+                                .forEach(variable -> {
+                                    try {
+                                        String extValue = (variable.getValue() != null)
+                                            ? tplEngine.getValue(variable.getValue(), String.class)
+                                            : null;
 
-                                context.setAttribute(variable.getName(), extValue);
-                            } catch (Exception ex) {
-                                // Do nothing
-                            }
-                        });
-                    }
+                                        context.setAttribute(variable.getName(), extValue);
+                                    } catch (Exception ex) {
+                                        // Do nothing
+                                    }
+                                });
+                        }
 
-                    onSuccess.accept(result);
-                } else {
-                    onError.accept(PolicyResult.failure(
-                            AWS_LAMBDA_INVALID_STATUS_CODE,
-                            HttpStatusCode.BAD_REQUEST_400,
-                            "Invalid status code from lambda function response.",
-                            Maps.<String, Object>builder()
+                        onSuccess.accept(result);
+                    } else {
+                        onError.accept(
+                            PolicyResult.failure(
+                                AWS_LAMBDA_INVALID_STATUS_CODE,
+                                HttpStatusCode.BAD_REQUEST_400,
+                                "Invalid status code from lambda function response.",
+                                Maps
+                                    .<String, Object>builder()
                                     .put("function", configuration.getFunction())
                                     .put("region", configuration.getRegion())
                                     .put("statusCode", result.getStatusCode())
-                                    .build()));
+                                    .build()
+                            )
+                        );
+                    }
                 }
             }
-        });
+        );
     }
 
     private AWSLambdaAsync initLambdaClient() {
@@ -283,19 +317,24 @@ public class AwsLambdaPolicy {
         AWSLambdaAsyncClientBuilder clientBuilder;
         BasicAWSCredentials credentials = null;
 
-        if (configuration.getAccessKey() != null && !configuration.getAccessKey().isEmpty() &&
-                configuration.getSecretKey() != null && !configuration.getSecretKey().isEmpty()) {
+        if (
+            configuration.getAccessKey() != null &&
+            !configuration.getAccessKey().isEmpty() &&
+            configuration.getSecretKey() != null &&
+            !configuration.getSecretKey().isEmpty()
+        ) {
             credentials = new BasicAWSCredentials(configuration.getAccessKey(), configuration.getSecretKey());
         }
 
         if (credentials != null) {
             // {@see http://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html}
-            clientBuilder = AWSLambdaAsyncClientBuilder.standard()
+            clientBuilder =
+                AWSLambdaAsyncClientBuilder
+                    .standard()
                     .withCredentials(new AWSStaticCredentialsProvider(credentials))
                     .withRegion(configuration.getRegion());
         } else {
-            clientBuilder = AWSLambdaAsyncClientBuilder.standard()
-                    .withRegion(configuration.getRegion());
+            clientBuilder = AWSLambdaAsyncClientBuilder.standard().withRegion(configuration.getRegion());
         }
 
         return clientBuilder.build();
