@@ -35,13 +35,15 @@
     </parent>
 
     <properties>
-        <gravitee-bom.version>1.0</gravitee-bom.version>
-        <gravitee-gateway-api.version>1.31.0</gravitee-gateway-api.version>
+        <gravitee-bom.version>2.9</gravitee-bom.version>
+        <gravitee-apim.version>3.20.2</gravitee-apim.version>
+        <gravitee-gateway-api.version>2.0.1</gravitee-gateway-api.version>
         <gravitee-policy-api.version>1.10.0</gravitee-policy-api.version>
-        <gravitee-common.version>1.25.0</gravitee-common.version>
+        <gravitee-common.version>2.1.0</gravitee-common.version>
         <aws-java-sdk-lambda.version>1.11.858</aws-java-sdk-lambda.version>
 
         <maven-assembly-plugin.version>2.5.5</maven-assembly-plugin.version>
+        <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <!-- Property used by the publication job in CI-->
         <publish-folder-path>graviteeio-apim/plugins/policies</publish-folder-path>
     </properties>
@@ -116,14 +118,9 @@
 
         <!-- Test scope -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
+            <groupId>io.gravitee.apim.gateway</groupId>
+            <artifactId>gravitee-apim-gateway-tests-sdk</artifactId>
+            <version>${gravitee-apim.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -189,6 +186,26 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>none</exclude>
+                            </excludes>
+                            <includes>
+                                <include>**/*IntegrationTest</include>
+                            </includes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
