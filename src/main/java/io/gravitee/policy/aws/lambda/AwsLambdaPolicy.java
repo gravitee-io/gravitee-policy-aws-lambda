@@ -56,7 +56,7 @@ public class AwsLambdaPolicy {
     private static final String AWS_LAMBDA_INVALID_RESPONSE = "AWS_LAMBDA_INVALID_RESPONSE";
     private static final String LAMBDA_RESULT_ATTR = "LAMBDA_RESULT";
 
-    private final AwsLambdaPolicyConfiguration configuration;
+    protected final AwsLambdaPolicyConfiguration configuration;
 
     private final AWSLambdaAsync lambdaClient;
 
@@ -312,7 +312,7 @@ public class AwsLambdaPolicy {
         );
     }
 
-    private AWSLambdaAsync initLambdaClient() {
+    protected AWSLambdaAsync initLambdaClient() {
         // initialize the lambda client
         AWSLambdaAsyncClientBuilder clientBuilder;
         BasicAWSCredentials credentials = null;
