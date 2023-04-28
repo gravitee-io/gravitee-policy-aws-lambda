@@ -1,14 +1,30 @@
 {
-  "extends": [
-    "config:base",
-    "schedule:earlyMondays"
-  ],
-  "prConcurrentLimit": 3,
+  "extends": ["config:base"],
   "rebaseWhen": "conflicted",
+  "baseBranches": ["master"],
   "packageRules": [
     {
       "matchDatasources": ["orb"],
-      "rangeStrategy": "replace"
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "automergeType": "branch",
+      "semanticCommitType": "ci"
+    },
+    {
+      "matchPackagePatterns": [
+        "com.amazonaws:aws-java-sdk-lambda"
+      ],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "branch",
+      "semanticCommitType": "fix"
+    },
+    {
+      "matchDepTypes": ["test"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true,
+      "automergeType": "branch",
+      "semanticCommitType": "fix"
     }
   ]
 }
