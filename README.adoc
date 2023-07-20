@@ -25,4 +25,118 @@ endif::[]
 
 == Description
 
-AWS Lambda allows to request Lambda instead of or in addition to the backend.
+AWS Lambda policy can be used to request a Lambda instead of or in addition to the backend.
+
+By default, the lambda is called in addition to the backend, meaning the consumer will not receive the response from Lambda.
+
+
+== Configuration
+
+|===
+|Property |Required |Description |Type |Default
+
+.^|scope
+^.^|X
+|The scope on which apply the policy
+^.^|string
+^.^|REQUEST
+
+.^|region
+^.^|X
+|The AWS region
+^.^|string
+^.^|us-east-1
+
+.^|accessKey
+^.^|
+|AWS Access Key
+^.^|string
+^.^|-
+
+.^|secretKey
+^.^|
+|AWS Secret Key
+^.^|string
+^.^|-
+
+.^|function
+^.^|X
+|The name of the AWS Lambda function to call
+^.^|string
+^.^|-
+
+.^|payload
+^.^|
+|Payload of the request to AWS Lambda function
+^.^|string
+^.^|-
+
+.^|variables
+^.^|
+|The variables to set in the execution context when retrieving content of HTTP call (support EL)
+^.^|List of variables
+^.^|-
+
+.^|sendToConsumer
+^.^|
+|Check this option if you want to send the response of the lambda to the initial consumer without going to the final upstream (endpoints) selected by the gateway.
+^.^|boolean
+^.^|false
+
+|===
+
+== Examples
+
+[source, json]
+----
+"configuration": {
+    "variables": [
+      {
+        "name": "lambdaResponse",
+        "value": "{#jsonPath(#lambdaResponse.content, '$')}"
+      }
+    ],
+    "secretKey": "secretKey",
+    "accessKey":"accessKey",
+    "payload": "{ \"key\": \"value\" }",
+    "scope": "REQUEST",
+    "function": "lambda-example",
+    "region": "us-east-1",
+    "sendToConsumer": true,
+    "endpoint": "http://aws-lambda-url/function"
+}
+----
+
+== Errors
+
+=== Default error
+
+|===
+|Code |Message
+
+.^| ```500```
+| Request processing broken
+
+|===
+
+=== Override errors
+
+You can override the default response provided by the policy with the response templates feature. These templates must be defined at the API level with the APIM Console *Proxy > Response Templates* function.
+
+The error keys sent by this policy are as follows:
+
+[cols="3*", options="header"]
+|===
+^|Key
+^|Default status
+^|Parameters
+
+.^|AWS_LAMBDA_INVALID_RESPONSE
+^.^|500
+^.^|-
+
+.^|AWS_LAMBDA_INVALID_STATUS_CODE
+^.^|400
+^.^|-
+
+|===
