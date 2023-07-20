@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.1.0...1.1.1) (2023-07-20)
+
+
+### Bug Fixes
+
+* update policy description ([33ce709](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/33ce709bae20cdea3e5d87906f3cc007fd2940f2))
+
 # [[secure]](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.0.0...[secure]) (2022-01-21)
 
 
