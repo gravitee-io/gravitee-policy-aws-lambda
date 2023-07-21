@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.1.1...1.1.2) (2023-07-21)
+
+
+### Bug Fixes
+
+* improve README ([7ce55a2](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/7ce55a2ac591adce63317f2cbfbc95e9224964dc))
+
 ## [1.1.1](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.1.0...1.1.1) (2023-07-20)
 
 
