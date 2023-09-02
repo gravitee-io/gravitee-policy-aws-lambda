@@ -39,7 +39,7 @@
         <gravitee-apim.version>3.21.0-SNAPSHOT</gravitee-apim.version>
         <gravitee-gateway-api.version>2.1.0</gravitee-gateway-api.version>
         <gravitee-policy-api.version>1.11.0</gravitee-policy-api.version>
-        <gravitee-common.version>2.1.0</gravitee-common.version>
+        <gravitee-common.version>2.3.0</gravitee-common.version>
         <aws-java-sdk-lambda.version>1.11.1034</aws-java-sdk-lambda.version>
 
         <maven-plugin-assembly.version>3.5.0</maven-plugin-assembly.version>
