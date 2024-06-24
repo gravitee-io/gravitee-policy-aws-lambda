@@ -83,6 +83,38 @@ By default, the lambda is called in addition to the backend, meaning the consume
 ^.^|boolean
 ^.^|false
 
+.^|invocationType
+^.^|X
+|RequestResponse (default) – Invoke the function synchronously. Keep the connection open until the function returns a response or times out. The API response includes the function response and additional data.
+Event – Invoke the function asynchronously. Send events that fail multiple times to the function's dead-letter queue (if one is configured). The API response only includes a status code.
+DryRun – Validate parameter values and verify that the user or role has permission to invoke the function.
+^.^|string
+^.^|RequestResponse
+
+.^|qualifier
+^.^|-
+|Specify a version or alias to invoke a published version of the function.
+^.^|string
+^.^|-
+
+.^|logType
+^.^|X
+|Set to Tail to include the execution log in the response. Applies to synchronously invoked functions only.
+^.^|string
+^.^|None
+
+.^|roleArn
+^.^|-
+|The arn of the role to be assumed. This is used when authentication is relying on the AWS Security Token Service (STS) to assume a Role and create temporary, short-lived sessions to use for authentication.
+^.^|string
+^.^|-
+
+.^|roleSessionName
+^.^|-
+|An identifier for the assumed role session (Only used when authentication is based on AWS Security Token Service (STS)
+^.^|string
+^.^|gravitee
+
 |===
 
 == Examples

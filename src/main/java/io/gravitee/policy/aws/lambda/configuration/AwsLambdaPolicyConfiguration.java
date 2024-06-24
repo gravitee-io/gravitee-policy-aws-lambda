@@ -15,6 +15,8 @@
  */
 package io.gravitee.policy.aws.lambda.configuration;
 
+import com.amazonaws.services.lambda.model.InvocationType;
+import com.amazonaws.services.lambda.model.LogType;
 import io.gravitee.policy.api.PolicyConfiguration;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +36,16 @@ public class AwsLambdaPolicyConfiguration implements PolicyConfiguration {
     private String function;
 
     private String payload;
+
+    private InvocationType invocationType = InvocationType.RequestResponse;
+
+    private String qualifier;
+
+    private String roleArn;
+
+    private String roleSessionName = "gravitee";
+
+    private LogType logType = LogType.None;
 
     private List<Variable> variables = new ArrayList<>();
 
@@ -101,5 +113,45 @@ public class AwsLambdaPolicyConfiguration implements PolicyConfiguration {
 
     public void setSendToConsumer(boolean sendToConsumer) {
         this.sendToConsumer = sendToConsumer;
+    }
+
+    public InvocationType getInvocationType() {
+        return invocationType;
+    }
+
+    public void setInvocationType(InvocationType invocationType) {
+        this.invocationType = invocationType;
+    }
+
+    public String getQualifier() {
+        return qualifier;
+    }
+
+    public void setQualifier(String qualifier) {
+        this.qualifier = qualifier;
+    }
+
+    public String getRoleArn() {
+        return roleArn;
+    }
+
+    public void setRoleArn(String roleArn) {
+        this.roleArn = roleArn;
+    }
+
+    public String getRoleSessionName() {
+        return roleSessionName;
+    }
+
+    public void setRoleSessionName(String roleSessionName) {
+        this.roleSessionName = roleSessionName;
+    }
+
+    public LogType getLogType() {
+        return logType;
+    }
+
+    public void setLogType(LogType logType) {
+        this.logType = logType;
     }
 }

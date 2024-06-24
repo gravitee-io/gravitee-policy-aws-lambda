@@ -15,13 +15,13 @@
  */
 package io.gravitee.policy.aws.lambda;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.*;
 import com.amazonaws.handlers.AsyncHandler;
 import com.amazonaws.services.lambda.AWSLambdaAsync;
 import com.amazonaws.services.lambda.AWSLambdaAsyncClientBuilder;
 import com.amazonaws.services.lambda.model.InvokeRequest;
 import com.amazonaws.services.lambda.model.InvokeResult;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import io.gravitee.common.http.HttpStatusCode;
 import io.gravitee.common.util.Maps;
 import io.gravitee.el.TemplateEngine;
@@ -42,6 +42,7 @@ import io.gravitee.policy.api.annotations.OnResponseContent;
 import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import io.gravitee.policy.aws.lambda.configuration.PolicyScope;
 import io.gravitee.policy.aws.lambda.el.LambdaResponse;
+import io.gravitee.policy.aws.lambda.sdk.AWSCredentialsProviderChain;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import java.util.function.Consumer;
@@ -220,7 +221,11 @@ public class AwsLambdaPolicy {
     }
 
     private void invokeLambda(ExecutionContext context, Consumer<InvokeResult> onSuccess, Consumer<PolicyResult> onError) {
-        InvokeRequest request = new InvokeRequest().withFunctionName(configuration.getFunction());
+        InvokeRequest request = new InvokeRequest()
+            .withFunctionName(configuration.getFunction())
+            .withInvocationType(configuration.getInvocationType())
+            .withQualifier(configuration.getQualifier())
+            .withLogType(configuration.getLogType());
 
         if (configuration.getPayload() != null && !configuration.getPayload().isEmpty()) {
             String payload = context.getTemplateEngine().getValue(configuration.getPayload(), String.class);
@@ -312,9 +317,31 @@ public class AwsLambdaPolicy {
         );
     }
 
-    protected AWSLambdaAsync initLambdaClient() {
-        // initialize the lambda client
-        AWSLambdaAsyncClientBuilder clientBuilder;
+    private AWSLambdaAsync initLambdaClient() {
+        AWSCredentialsProvider awsCredentialsProvider;
+
+        if (configuration.getRoleArn() != null && !configuration.getRoleArn().isEmpty()) {
+            awsCredentialsProvider = createSTSCredentialsProvider();
+        } else {
+            awsCredentialsProvider = getAWSCredentialsProvider();
+        }
+
+        return AWSLambdaAsyncClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(configuration.getRegion()).build();
+    }
+
+    private AWSCredentialsProvider createSTSCredentialsProvider() {
+        return new STSAssumeRoleSessionCredentialsProvider.Builder(configuration.getRoleArn(), configuration.getRoleSessionName())
+            .withStsClient(
+                AWSSecurityTokenServiceClientBuilder
+                    .standard()
+                    .withCredentials(getAWSCredentialsProvider())
+                    .withRegion(configuration.getRegion())
+                    .build()
+            )
+            .build();
+    }
+
+    private AWSCredentialsProvider getAWSCredentialsProvider() {
         BasicAWSCredentials credentials = null;
 
         if (
@@ -328,15 +355,9 @@ public class AwsLambdaPolicy {
 
         if (credentials != null) {
             // {@see http://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html}
-            clientBuilder =
-                AWSLambdaAsyncClientBuilder
-                    .standard()
-                    .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                    .withRegion(configuration.getRegion());
+            return new AWSStaticCredentialsProvider(credentials);
         } else {
-            clientBuilder = AWSLambdaAsyncClientBuilder.standard().withRegion(configuration.getRegion());
+            return AWSCredentialsProviderChain.getInstance();
         }
-
-        return clientBuilder.build();
     }
 }
