@@ -36,11 +36,11 @@
 
     <properties>
         <gravitee-bom.version>4.0.3</gravitee-bom.version>
-        <gravitee-apim.version>3.21.0-SNAPSHOT</gravitee-apim.version>
+        <gravitee-apim.version>4.3.7</gravitee-apim.version>
         <gravitee-gateway-api.version>2.1.0</gravitee-gateway-api.version>
         <gravitee-policy-api.version>1.11.0</gravitee-policy-api.version>
         <gravitee-common.version>2.1.0</gravitee-common.version>
-        <aws-java-sdk-lambda.version>1.11.1034</aws-java-sdk-lambda.version>
+        <aws-java-sdk.version>1.12.748</aws-java-sdk.version>
 
         <maven-plugin-assembly.version>3.5.0</maven-plugin-assembly.version>
         <maven-plugin-prettier.version>0.19</maven-plugin-prettier.version>
@@ -90,7 +90,13 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-lambda</artifactId>
-            <version>${aws-java-sdk-lambda.version}</version>
+            <version>${aws-java-sdk.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sts</artifactId>
+            <version>${aws-java-sdk.version}</version>
         </dependency>
 
         <!-- Vert.x -->

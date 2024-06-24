@@ -30,6 +30,36 @@
       "description": "AWS Lambda function to call",
       "type" : "string"
     },
+    "invocationType": {
+      "title": "Invocation Type",
+      "description": "RequestResponse (default) – Invoke the function synchronously. Keep the connection open until the function returns a response or times out. The API response includes the function response and additional data.\nEvent – Invoke the function asynchronously. Send events that fail multiple times to the function's dead-letter queue (if one is configured). The API response only includes a status code.\nDryRun – Validate parameter values and verify that the user or role has permission to invoke the function.",
+      "type" : "string",
+      "default": "RequestResponse",
+      "enum" : [ "RequestResponse", "Event", "DryRun" ]
+    },
+    "qualifier": {
+      "title": "Qualifier",
+      "description": "Specify a version or alias to invoke a published version of the function.",
+      "type" : "string"
+    },
+    "logType": {
+      "title": "Log Type",
+      "description": "Set to Tail to include the execution log in the response. Applies to synchronously invoked functions only.",
+      "type" : "string",
+      "default": "None",
+      "enum" : [ "None", "Tail" ]
+    },
+    "roleArn": {
+      "title": "Assume Role ARN",
+      "description": "The arn of the role to be assumed. This is used when authentication is relying on the AWS Security Token Service (STS) to assume a Role and create temporary, short-lived sessions to use for authentication.",
+      "type" : "string"
+    },
+    "roleSessionName": {
+      "title": "Role Session Name",
+      "description": "An identifier for the assumed role session (Only used when authentication is based on AWS Security Token Service (STS)",
+      "default": "gravitee",
+      "type" : "string"
+    },
     "payload" : {
       "title": "Lambda request payload",
       "type" : "string",
@@ -78,6 +108,8 @@
   "required": [
     "scope",
     "region",
-    "function"
+    "function",
+    "invocationType",
+    "logType"
   ]
 }
