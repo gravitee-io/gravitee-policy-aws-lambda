@@ -1,63 +1,61 @@
 {
-  "id": "on-response-api",
-  "name": "on-response-api",
-  "gravitee": "2.0.0",
-  "proxy": {
-    "context_path": "/on-response",
-    "endpoints": [
-      {
-        "name": "default",
-        "target": "http://localhost:8080/endpoint",
-        "http": {
-          "connectTimeout": 3000,
-          "readTimeout": 60000
+    "id": "on-response-api",
+    "name": "on-response-api",
+    "gravitee": "2.0.0",
+    "proxy": {
+        "context_path": "/on-response",
+        "endpoints": [
+            {
+                "name": "default",
+                "target": "http://localhost:8080/endpoint",
+                "http": {
+                    "connectTimeout": 3000,
+                    "readTimeout": 60000
+                }
+            }
+        ]
+    },
+    "flows": [
+        {
+            "name": "on-response-api flow",
+            "enabled": true,
+            "path-operator": {
+                "path": "/",
+                "operator": "STARTS_WITH"
+            },
+            "methods": ["GET"],
+            "pre": [],
+            "post": [
+                {
+                    "name": "AWS Lambda",
+                    "description": "",
+                    "enabled": true,
+                    "policy": "aws-lambda-test-policy",
+                    "configuration": {
+                        "variables": [
+                            {
+                                "name": "lambdaResponse",
+                                "value": "{#jsonPath(#lambdaResponse.content, '$')}"
+                            }
+                        ],
+                        "secretKey": "secretKey",
+                        "accessKey": "accessKey",
+                        "payload": "{ \"key\": \"value\" }",
+                        "scope": "RESPONSE",
+                        "function": "lambda-example",
+                        "region": "us-east-1",
+                        "sendToConsumer": false,
+                        "endpoint": "http://localhost:9999"
+                    }
+                },
+                {
+                    "name": "Copy Aws Lambda Attribute",
+                    "description": "",
+                    "enabled": true,
+                    "policy": "copy-aws-lambda-attribute",
+                    "configuration": {}
+                }
+            ]
         }
-      }
     ]
-  },
-  "flows": [
-    {
-      "name": "on-response-api flow",
-      "enabled": true,
-      "path-operator": {
-        "path": "/",
-        "operator": "STARTS_WITH"
-      },
-      "methods": [
-        "GET"
-      ],
-      "pre": [ ],
-      "post": [
-        {
-          "name": "AWS Lambda",
-          "description": "",
-          "enabled": true,
-          "policy": "aws-lambda-test-policy",
-          "configuration": {
-            "variables": [
-              {
-                "name": "lambdaResponse",
-                "value": "{#jsonPath(#lambdaResponse.content, '$')}"
-              }
-            ],
-            "secretKey": "secretKey",
-            "accessKey":"accessKey",
-            "payload": "{ \"key\": \"value\" }",
-            "scope": "RESPONSE",
-            "function": "lambda-example",
-            "region": "us-east-1",
-            "sendToConsumer": false,
-            "endpoint": "http://localhost:9999"
-          }
-        },
-        {
-          "name": "Copy Aws Lambda Attribute",
-          "description": "",
-          "enabled": true,
-          "policy": "copy-aws-lambda-attribute",
-          "configuration": {}
-        }
-      ]
-    }
-  ]
 }

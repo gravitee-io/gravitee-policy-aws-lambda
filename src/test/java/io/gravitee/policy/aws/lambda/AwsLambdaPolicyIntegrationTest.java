@@ -1,11 +1,11 @@
-/**
- * Copyright (C) 2015 The Gravitee team (http://gravitee.io)
+/*
+ * Copyright © 2015 The Gravitee team (http://gravitee.io)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,27 +18,38 @@ package io.gravitee.policy.aws.lambda;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import io.gravitee.apim.gateway.tests.sdk.AbstractGatewayTest;
+import io.gravitee.apim.gateway.tests.sdk.AbstractPolicyTest;
 import io.gravitee.apim.gateway.tests.sdk.annotations.DeployApi;
 import io.gravitee.apim.gateway.tests.sdk.annotations.GatewayTest;
 import io.gravitee.apim.gateway.tests.sdk.configuration.GatewayConfigurationBuilder;
 import io.gravitee.apim.gateway.tests.sdk.policy.PolicyBuilder;
 import io.gravitee.definition.model.Api;
 import io.gravitee.definition.model.ExecutionMode;
+import io.gravitee.el.TemplateContext;
+import io.gravitee.el.TemplateEngine;
+import io.gravitee.gateway.reactive.api.context.ExecutionContext;
 import io.gravitee.gateway.reactor.ReactableApi;
 import io.gravitee.plugin.policy.PolicyPlugin;
+import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.rxjava3.core.http.HttpClient;
 import io.vertx.rxjava3.core.http.HttpClientRequest;
 import java.util.Map;
 import java.util.stream.Stream;
+import org.junit.Before;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 @GatewayTest
 @DeployApi(
@@ -50,7 +61,7 @@ import org.junit.jupiter.params.provider.MethodSource;
         "/apis/aws-lambda-with-send-to-consumer.json",
     }
 )
-public class AwsLambdaPolicyIntegrationTest extends AbstractGatewayTest {
+public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambdaPolicy, AwsLambdaPolicyConfiguration> {
 
     private WireMockServer awsLambdaMock;
 
@@ -84,7 +95,7 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractGatewayTest {
     @Override
     public void configureApi(ReactableApi<?> api, Class<?> apiDefinitionClass) {
         if (apiDefinitionClass.isAssignableFrom(Api.class)) {
-            ((Api) api.getDefinition()).setExecutionMode(ExecutionMode.JUPITER);
+            ((Api) api.getDefinition()).setExecutionMode(ExecutionMode.V3);
             ((Api) api.getDefinition()).getFlows()
                 .forEach(flow -> {
                     flow

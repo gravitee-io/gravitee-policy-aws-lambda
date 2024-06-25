@@ -1,30 +1,28 @@
 {
-  "extends": ["config:base"],
-  "rebaseWhen": "conflicted",
-  "baseBranches": ["master"],
-  "packageRules": [
-    {
-      "matchDatasources": ["orb"],
-      "matchUpdateTypes": ["patch", "minor"],
-      "automerge": true,
-      "automergeType": "branch",
-      "semanticCommitType": "ci"
-    },
-    {
-      "matchPackagePatterns": [
-        "com.amazonaws:aws-java-sdk-lambda"
-      ],
-      "matchUpdateTypes": ["patch"],
-      "automerge": true,
-      "automergeType": "branch",
-      "semanticCommitType": "fix"
-    },
-    {
-      "matchDepTypes": ["test"],
-      "matchUpdateTypes": ["patch", "minor"],
-      "automerge": true,
-      "automergeType": "branch",
-      "semanticCommitType": "fix"
-    }
-  ]
+    "extends": ["config:base"],
+    "rebaseWhen": "conflicted",
+    "baseBranches": ["master"],
+    "packageRules": [
+        {
+            "matchDatasources": ["orb"],
+            "matchUpdateTypes": ["patch", "minor"],
+            "automerge": true,
+            "automergeType": "branch",
+            "semanticCommitType": "ci"
+        },
+        {
+            "matchPackagePatterns": ["com.amazonaws:aws-java-sdk-lambda"],
+            "matchUpdateTypes": ["patch"],
+            "automerge": true,
+            "automergeType": "branch",
+            "semanticCommitType": "fix"
+        },
+        {
+            "matchDepTypes": ["test"],
+            "matchUpdateTypes": ["patch", "minor"],
+            "automerge": true,
+            "automergeType": "branch",
+            "semanticCommitType": "fix"
+        }
+    ]
 }
