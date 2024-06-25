@@ -35,11 +35,11 @@
     </parent>
 
     <properties>
-        <gravitee-bom.version>8.1.0</gravitee-bom.version>
-        <gravitee-apim.version>4.3.7</gravitee-apim.version>
-        <gravitee-gateway-api.version>3.5.0</gravitee-gateway-api.version>
+        <gravitee-bom.version>6.0.3</gravitee-bom.version>
+        <gravitee-apim.version>4.0.0</gravitee-apim.version>
+        <gravitee-gateway-api.version>3.2.3</gravitee-gateway-api.version>
         <gravitee-policy-api.version>1.11.0</gravitee-policy-api.version>
-        <gravitee-common.version>4.4.0</gravitee-common.version>
+        <gravitee-common.version>3.4.1</gravitee-common.version>
         <aws-java-sdk.version>1.12.748</aws-java-sdk.version>
 
         <maven-plugin-assembly.version>3.5.0</maven-plugin-assembly.version>
