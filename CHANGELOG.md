@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.1.2...1.2.0) (2024-06-25)
+
+
+### Bug Fixes
+
+* **aws-lambda:** bump gravitee version ([cbb98ae](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/cbb98aee04673dad69f4e6092a95cb6cf2573999))
+
+
+### Features
+
+* **aws-lambda:** Add support for STS to manage dynamic authentication credentials ([eaf7eb1](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/eaf7eb11172de031bf202467ce26ec6c3a708da9))
+
 ## [1.1.2](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.1.1...1.1.2) (2023-07-21)
 
 
