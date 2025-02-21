@@ -40,7 +40,7 @@
         <gravitee-gateway-api.version>3.5.0</gravitee-gateway-api.version>
         <gravitee-policy-api.version>1.11.0</gravitee-policy-api.version>
         <gravitee-common.version>4.4.0</gravitee-common.version>
-        <aws-java-sdk.version>1.12.748</aws-java-sdk.version>
+        <aws-java-sdk.version>1.12.782</aws-java-sdk.version>
 
         <maven-plugin-assembly.version>3.5.0</maven-plugin-assembly.version>
         <maven-plugin-prettier.version>0.19</maven-plugin-prettier.version>
