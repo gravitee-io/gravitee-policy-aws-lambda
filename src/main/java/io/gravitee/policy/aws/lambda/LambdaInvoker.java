@@ -40,7 +40,7 @@ public class LambdaInvoker implements Invoker {
 
     private InvokeResult invokeResult;
 
-    LambdaInvoker(boolean invokeDelegate, Invoker delegate, InvokeResult invokeResult) {
+    public LambdaInvoker(boolean invokeDelegate, Invoker delegate, InvokeResult invokeResult) {
         this.invokeDelegate = invokeDelegate;
         this.delegate = delegate;
         this.invokeResult = invokeResult;
