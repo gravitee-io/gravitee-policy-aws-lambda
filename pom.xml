@@ -35,11 +35,7 @@
     </parent>
 
     <properties>
-        <gravitee-bom.version>8.1.0</gravitee-bom.version>
-        <gravitee-apim.version>4.3.7</gravitee-apim.version>
-        <gravitee-gateway-api.version>3.5.0</gravitee-gateway-api.version>
-        <gravitee-policy-api.version>1.11.0</gravitee-policy-api.version>
-        <gravitee-common.version>4.4.0</gravitee-common.version>
+        <gravitee-apim-bom.version>4.7.0-alpha.1</gravitee-apim-bom.version>
         <aws-java-sdk.version>1.12.748</aws-java-sdk.version>
 
         <maven-plugin-assembly.version>3.5.0</maven-plugin-assembly.version>
@@ -55,9 +51,9 @@
         <dependencies>
             <!-- Import bom to properly inherit all dependencies -->
             <dependency>
-                <groupId>io.gravitee</groupId>
-                <artifactId>gravitee-bom</artifactId>
-                <version>${gravitee-bom.version}</version>
+                <groupId>io.gravitee.apim</groupId>
+                <artifactId>gravitee-apim-bom</artifactId>
+                <version>${gravitee-apim-bom.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -69,21 +65,18 @@
         <dependency>
             <groupId>io.gravitee.gateway</groupId>
             <artifactId>gravitee-gateway-api</artifactId>
-            <version>${gravitee-gateway-api.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>io.gravitee.policy</groupId>
             <artifactId>gravitee-policy-api</artifactId>
-            <version>${gravitee-policy-api.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>io.gravitee.common</groupId>
             <artifactId>gravitee-common</artifactId>
-            <version>${gravitee-common.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -129,7 +122,7 @@
         <dependency>
             <groupId>io.gravitee.apim.gateway</groupId>
             <artifactId>gravitee-apim-gateway-tests-sdk</artifactId>
-            <version>${gravitee-apim.version}</version>
+            <version>${gravitee-apim-bom.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
