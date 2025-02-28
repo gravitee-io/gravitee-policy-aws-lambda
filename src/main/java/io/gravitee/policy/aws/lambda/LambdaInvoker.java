@@ -15,7 +15,6 @@
  */
 package io.gravitee.policy.aws.lambda;
 
-import com.amazonaws.services.lambda.model.InvokeResult;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Invoker;
 import io.gravitee.gateway.api.buffer.Buffer;
@@ -27,23 +26,28 @@ import io.gravitee.gateway.api.proxy.ProxyResponse;
 import io.gravitee.gateway.api.stream.ReadStream;
 import java.nio.ByteBuffer;
 
+import lombok.Getter;
+import lombok.Setter;
+import software.amazon.awssdk.services.lambda.model.InvokeResponse;
+
 /**
- * Invoker allowing to delegate invocation to the specified invoker or replace the invocation response with the provided lambda respinse (aka {@link InvokeResult}).
+ * Invoker allowing to delegate invocation to the specified invoker or replace the invocation response with the provided lambda response (aka {@link InvokeResponse}).
  *
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
  * @author GraviteeSource Team
  */
+@Setter
+@Getter
 public class LambdaInvoker implements Invoker {
 
     private final Invoker delegate;
     private final boolean invokeDelegate;
+    private InvokeResponse invokeResponse;
 
-    private InvokeResult invokeResult;
-
-    public LambdaInvoker(boolean invokeDelegate, Invoker delegate, InvokeResult invokeResult) {
+    public LambdaInvoker(boolean invokeDelegate, Invoker delegate, InvokeResponse invokeResponse) {
         this.invokeDelegate = invokeDelegate;
         this.delegate = delegate;
-        this.invokeResult = invokeResult;
+        this.invokeResponse = invokeResponse;
     }
 
     public LambdaInvoker(boolean invokeDelegate, Invoker delegate) {
@@ -69,14 +73,6 @@ public class LambdaInvoker implements Invoker {
         } else {
             delegate.invoke(context, stream, connectionHandler);
         }
-    }
-
-    public InvokeResult getInvokeResult() {
-        return invokeResult;
-    }
-
-    public void setInvokeResult(InvokeResult invokeResult) {
-        this.invokeResult = invokeResult;
     }
 
     class LambdaProxyConnection implements ProxyConnection {
@@ -119,7 +115,7 @@ public class LambdaInvoker implements Invoker {
         }
 
         private void init() {
-            ByteBuffer payload = invokeResult.getPayload();
+            ByteBuffer payload = invokeResponse.payload().asByteBuffer();
 
             if (payload != null) {
                 headers.set(HttpHeaderNames.CONTENT_LENGTH, Integer.toString(payload.array().length));
@@ -128,7 +124,7 @@ public class LambdaInvoker implements Invoker {
 
         @Override
         public int status() {
-            return invokeResult.getStatusCode();
+            return invokeResponse.statusCode();
         }
 
         @Override
@@ -150,7 +146,7 @@ public class LambdaInvoker implements Invoker {
 
         @Override
         public ReadStream<Buffer> resume() {
-            ByteBuffer payload = invokeResult.getPayload();
+            ByteBuffer payload = invokeResponse.payload().asByteBuffer();
 
             if (payload != null) {
                 bodyHandler.handle(Buffer.buffer(payload.array()));
