@@ -13,24 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.policy.aws.lambda;
+package io.gravitee.policy.aws.lambda.configuration;
 
-import io.gravitee.gateway.reactive.api.policy.http.HttpPolicy;
-import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
-import io.gravitee.policy.v3.aws.lambda.AwsLambdaPolicyV3;
+import io.gravitee.common.http.HttpStatusCode;
+import lombok.Getter;
 
-/**
- * @author David BRASSELY (david.brassely at graviteesource.com)
- * @author GraviteeSource Team
- */
-public class AwsLambdaPolicy extends AwsLambdaPolicyV3 implements HttpPolicy {
+@Getter
+public enum AwsLambdaError {
+    AWS_LAMBDA_INVALID_RESPONSE(HttpStatusCode.INTERNAL_SERVER_ERROR_500, "An error occurs while invoking lambda function."),
+    AWS_LAMBDA_INVALID_STATUS_CODE(HttpStatusCode.BAD_REQUEST_400, "Invalid status code from lambda function response.");
 
-    public AwsLambdaPolicy(AwsLambdaPolicyConfiguration configuration) {
-        super(configuration);
-    }
+    private final int statusCode;
+    private final String message;
 
-    @Override
-    public String id() {
-        return "aws-lambda";
+    AwsLambdaError(int statusCode, String message) {
+        this.statusCode = statusCode;
+        this.message = message;
     }
 }
