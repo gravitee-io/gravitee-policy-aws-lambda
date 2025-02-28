@@ -36,7 +36,7 @@
 
     <properties>
         <gravitee-apim-bom.version>4.7.0-alpha.1</gravitee-apim-bom.version>
-        <aws-java-sdk.version>1.12.748</aws-java-sdk.version>
+        <aws-java-sdk.version>2.30.26</aws-java-sdk.version>
 
         <maven-plugin-assembly.version>3.5.0</maven-plugin-assembly.version>
         <maven-plugin-prettier.version>0.19</maven-plugin-prettier.version>
@@ -81,15 +81,27 @@
         </dependency>
 
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-lambda</artifactId>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>lambda</artifactId>
             <version>${aws-java-sdk.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-sts</artifactId>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
             <version>${aws-java-sdk.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-buffer</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Vert.x -->
