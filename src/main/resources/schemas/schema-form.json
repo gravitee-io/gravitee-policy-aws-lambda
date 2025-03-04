@@ -7,7 +7,8 @@
             "description": "Execute policy on <strong>request</strong> (HEAD) phase, <strong>response</strong> (HEAD) phase, <strong>request_content</strong> (includes payload) phase, <strong>response content</strong> (includes payload) phase.",
             "type": "string",
             "default": "REQUEST",
-            "enum": ["REQUEST", "RESPONSE", "REQUEST_CONTENT", "RESPONSE_CONTENT"]
+            "enum": ["REQUEST", "RESPONSE", "REQUEST_CONTENT", "RESPONSE_CONTENT"],
+            "deprecated": true
         },
         "region": {
             "title": "AWS Region",
@@ -34,8 +35,8 @@
             "title": "Invocation Type",
             "description": "RequestResponse (default) – Invoke the function synchronously. Keep the connection open until the function returns a response or times out. The API response includes the function response and additional data.\nEvent – Invoke the function asynchronously. Send events that fail multiple times to the function's dead-letter queue (if one is configured). The API response only includes a status code.\nDryRun – Validate parameter values and verify that the user or role has permission to invoke the function.",
             "type": "string",
-            "default": "REQUEST_RESPONSE",
-            "enum": ["REQUEST_RESPONSE", "EVENT", "DRY_RUN"]
+            "default": "RequestResponse",
+            "enum": ["RequestResponse", "Event", "DryRun"]
         },
         "qualifier": {
             "title": "Qualifier",
@@ -46,8 +47,8 @@
             "title": "Log Type",
             "description": "Set to Tail to include the execution log in the response. Applies to synchronously invoked functions only.",
             "type": "string",
-            "default": "NONE",
-            "enum": ["NONE", "TAIL"]
+            "default": "None",
+            "enum": ["None", "Tail"]
         },
         "roleArn": {
             "title": "Assume Role ARN",
