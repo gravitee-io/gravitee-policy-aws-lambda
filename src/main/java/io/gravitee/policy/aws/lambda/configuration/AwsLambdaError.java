@@ -21,7 +21,8 @@ import lombok.Getter;
 @Getter
 public enum AwsLambdaError {
     AWS_LAMBDA_INVALID_RESPONSE(HttpStatusCode.INTERNAL_SERVER_ERROR_500, "An error occurs while invoking lambda function."),
-    AWS_LAMBDA_INVALID_STATUS_CODE(HttpStatusCode.BAD_REQUEST_400, "Invalid status code from lambda function response.");
+    AWS_LAMBDA_INVALID_STATUS_CODE(HttpStatusCode.BAD_REQUEST_400, "Invalid status code from lambda function response."),
+    AWS_LAMBDA_TEMPLATE_VARIABLE_EXCEPTION(HttpStatusCode.INTERNAL_SERVER_ERROR_500, "An error occurs while processing context variables.");
 
     private final int statusCode;
     private final String message;
@@ -29,5 +30,9 @@ public enum AwsLambdaError {
     AwsLambdaError(int statusCode, String message) {
         this.statusCode = statusCode;
         this.message = message;
+    }
+
+    public String getMessageWithDetails(AwsLambdaError error, Throwable throwable) {
+        return error.getMessage() + " Details: [" + throwable.getCause().getMessage() + "]";
     }
 }

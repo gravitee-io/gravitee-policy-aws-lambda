@@ -24,6 +24,7 @@ import io.gravitee.policy.api.annotations.OnResponseContent;
 
 public class CopyAwsLambdaAttributePolicy {
 
+    public static final String COPY_AWS_LAMBDA_ATTRIBUTE_POLICY = "copy-aws-lambda-attribute";
     public static final String NO_AWS_LAMBDA_CONTENT_ATTRIBUTE = "noContent";
 
     @OnResponseContent

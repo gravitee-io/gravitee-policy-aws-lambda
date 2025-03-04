@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.policy.aws.lambda;
+package io.gravitee.policy.aws.lambda.invokers;
 
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Invoker;
@@ -24,10 +24,9 @@ import io.gravitee.gateway.api.http.HttpHeaders;
 import io.gravitee.gateway.api.proxy.ProxyConnection;
 import io.gravitee.gateway.api.proxy.ProxyResponse;
 import io.gravitee.gateway.api.stream.ReadStream;
-import java.nio.ByteBuffer;
-
 import lombok.Getter;
 import lombok.Setter;
+import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 
 /**
@@ -38,19 +37,19 @@ import software.amazon.awssdk.services.lambda.model.InvokeResponse;
  */
 @Setter
 @Getter
-public class LambdaInvoker implements Invoker {
+public class LambdaInvokerV3 implements Invoker {
 
     private final Invoker delegate;
     private final boolean invokeDelegate;
     private InvokeResponse invokeResponse;
 
-    public LambdaInvoker(boolean invokeDelegate, Invoker delegate, InvokeResponse invokeResponse) {
+    public LambdaInvokerV3(boolean invokeDelegate, Invoker delegate, InvokeResponse invokeResponse) {
         this.invokeDelegate = invokeDelegate;
         this.delegate = delegate;
         this.invokeResponse = invokeResponse;
     }
 
-    public LambdaInvoker(boolean invokeDelegate, Invoker delegate) {
+    public LambdaInvokerV3(boolean invokeDelegate, Invoker delegate) {
         this.invokeDelegate = invokeDelegate;
         this.delegate = delegate;
     }
@@ -115,10 +114,10 @@ public class LambdaInvoker implements Invoker {
         }
 
         private void init() {
-            ByteBuffer payload = invokeResponse.payload().asByteBuffer();
+            SdkBytes payload = invokeResponse.payload();
 
             if (payload != null) {
-                headers.set(HttpHeaderNames.CONTENT_LENGTH, Integer.toString(payload.array().length));
+                headers.set(HttpHeaderNames.CONTENT_LENGTH, Integer.toString(payload.asByteArray().length));
             }
         }
 
@@ -146,10 +145,10 @@ public class LambdaInvoker implements Invoker {
 
         @Override
         public ReadStream<Buffer> resume() {
-            ByteBuffer payload = invokeResponse.payload().asByteBuffer();
+            SdkBytes payload = invokeResponse.payload();
 
             if (payload != null) {
-                bodyHandler.handle(Buffer.buffer(payload.array()));
+                bodyHandler.handle(Buffer.buffer(payload.asByteArray()));
             }
 
             endHandler.handle(null);
