@@ -100,7 +100,14 @@
             "title": "Send lambda function result to consumer",
             "description": "Check this option if you want to send the response of the lambda to the initial consumer without going to the final upstream (endpoints) selected by the gateway.",
             "type": "boolean",
-            "default": false
+            "default": false,
+            "gioConfig": {
+                "displayIf": {
+                    "$eq": {
+                        "context.apiType": ["PROXY"]
+                    }
+                }
+            }
         }
     },
     "required": ["scope", "region", "function", "invocationType", "logType"]

@@ -15,11 +15,11 @@
  */
 package io.gravitee.policy.aws.lambda;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.lambda.AWSLambdaAsync;
-import com.amazonaws.services.lambda.AWSLambdaAsyncClientBuilder;
+import java.net.URI;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 
 /**
  * This AwsLambdaTestPolicy policy has been created to be able to override the AWS Lambda client in order to use WireMock.
@@ -29,23 +29,26 @@ import com.amazonaws.services.lambda.AWSLambdaAsyncClientBuilder;
  */
 public class AwsLambdaTestPolicy extends AwsLambdaPolicy {
 
+    public static final String AWS_LAMBDA_TEST_POLICY = "aws-lambda-test-policy";
+
     public AwsLambdaTestPolicy(AwsLambdaTestPolicyConfiguration configuration) {
         super(configuration);
     }
 
     @Override
-    protected AWSLambdaAsync initLambdaClient() {
-        return AWSLambdaAsyncClientBuilder
-            .standard()
-            .withCredentials(
-                new AWSStaticCredentialsProvider(new BasicAWSCredentials(configuration.getAccessKey(), configuration.getSecretKey()))
+    public String id() {
+        return AWS_LAMBDA_TEST_POLICY;
+    }
+
+    @Override
+    protected LambdaAsyncClient initLambdaClient() {
+        return LambdaAsyncClient
+            .builder()
+            .credentialsProvider(
+                StaticCredentialsProvider.create(AwsBasicCredentials.create(configuration.getAccessKey(), configuration.getSecretKey()))
             )
-            .withEndpointConfiguration(
-                new AwsClientBuilder.EndpointConfiguration(
-                    ((AwsLambdaTestPolicyConfiguration) this.configuration).getEndpoint(),
-                    this.configuration.getRegion()
-                )
-            )
+            .endpointOverride(URI.create(((AwsLambdaTestPolicyConfiguration) this.configuration).getEndpoint()))
+            .region(Region.of(this.configuration.getRegion()))
             .build();
     }
 }
