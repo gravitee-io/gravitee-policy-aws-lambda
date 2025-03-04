@@ -31,18 +31,21 @@
                     "enabled": true,
                     "policy": "aws-lambda-test-policy",
                     "configuration": {
+                        "scope": "REQUEST",
+                        "region": "us-east-1",
+                        "accessKey": "accessKey",
+                        "secretKey": "secretKey",
+                        "function": "lambda-example",
+                        "payload": "{ \"key\": \"value\" }",
+                        "invocationType": "RequestResponse",
+                        "roleSessionName": "gravitee",
+                        "logType": "None",
                         "variables": [
                             {
                                 "name": "lambdaResponse",
                                 "value": "{#jsonPath(#lambdaResponse.content, '$')}"
                             }
                         ],
-                        "secretKey": "secretKey",
-                        "accessKey": "accessKey",
-                        "payload": "{ \"key\": \"value\" }",
-                        "scope": "REQUEST",
-                        "function": "lambda-example",
-                        "region": "us-east-1",
                         "sendToConsumer": false,
                         "endpoint": "http://localhost:9999"
                     }

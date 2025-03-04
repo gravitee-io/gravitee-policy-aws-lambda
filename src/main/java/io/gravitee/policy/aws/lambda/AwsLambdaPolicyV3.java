@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.policy.v3.aws.lambda;
+package io.gravitee.policy.aws.lambda;
 
 import static io.gravitee.policy.aws.lambda.configuration.AwsLambdaError.AWS_LAMBDA_INVALID_RESPONSE;
 import static io.gravitee.policy.aws.lambda.configuration.AwsLambdaError.AWS_LAMBDA_INVALID_STATUS_CODE;
@@ -34,11 +34,11 @@ import io.gravitee.policy.api.annotations.OnRequest;
 import io.gravitee.policy.api.annotations.OnRequestContent;
 import io.gravitee.policy.api.annotations.OnResponse;
 import io.gravitee.policy.api.annotations.OnResponseContent;
-import io.gravitee.policy.aws.lambda.LambdaInvoker;
 import io.gravitee.policy.aws.lambda.configuration.AwsLambdaError;
 import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import io.gravitee.policy.aws.lambda.configuration.PolicyScope;
 import io.gravitee.policy.aws.lambda.el.LambdaResponse;
+import io.gravitee.policy.aws.lambda.invokers.LambdaInvokerV3;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import java.util.concurrent.CompletableFuture;
@@ -92,7 +92,7 @@ public class AwsLambdaPolicyV3 {
                 // Dynamically set the default invoker and provide a custom implementation to returns data from lambda function.
                 context.setAttribute(
                     ExecutionContext.ATTR_INVOKER,
-                    new LambdaInvoker(!configuration.isSendToConsumer(), originalInvoker, result)
+                    new LambdaInvokerV3(!configuration.isSendToConsumer(), originalInvoker, result)
                 );
 
                 // Continue the policy chain.
@@ -115,17 +115,13 @@ public class AwsLambdaPolicyV3 {
             context,
             result -> {
                 if (configuration.isSendToConsumer()) {
-                    if (configuration.isSendToConsumer()) {
-                        // Save the lambda result for later reuse in the response content phase (eg: to override the response).
-                        context.setAttribute(LAMBDA_RESULT_ATTR, result);
-                    }
+                    // Save the lambda result for later reuse in the response content phase (eg: to override the response).
+                    context.setAttribute(LAMBDA_RESULT_ATTR, result);
                 }
 
                 vertxContext.runOnContext(v -> chain.doNext(context.request(), context.response()));
             },
-            result -> {
-                chain.failWith(result);
-            }
+            chain::failWith
         );
     }
 
@@ -136,7 +132,7 @@ public class AwsLambdaPolicyV3 {
         }
 
         final Invoker originalInvoker = (Invoker) context.getAttribute(ExecutionContext.ATTR_INVOKER);
-        final LambdaInvoker lambdaInvoker = new LambdaInvoker(!configuration.isSendToConsumer(), originalInvoker);
+        final LambdaInvokerV3 lambdaInvoker = new LambdaInvokerV3(!configuration.isSendToConsumer(), originalInvoker);
         context.setAttribute(ExecutionContext.ATTR_INVOKER, lambdaInvoker);
 
         return new BufferedReadWriteStream() {
@@ -228,20 +224,26 @@ public class AwsLambdaPolicyV3 {
     }
 
     protected CompletableFuture<InvokeResponse> invokeLambda(TemplateEngine templateEngine) {
-        InvokeRequest.Builder request = InvokeRequest
-            .builder()
-            .functionName(configuration.getFunction())
-            .invocationType(configuration.getInvocationType())
-            .qualifier(configuration.getQualifier())
-            .logType(configuration.getLogType());
+        return CompletableFuture
+            .supplyAsync(() -> {
+                InvokeRequest.Builder awsRequest = InvokeRequest
+                    .builder()
+                    .functionName(configuration.getFunction())
+                    .invocationType(configuration.getInvocationType())
+                    .qualifier(configuration.getQualifier())
+                    .logType(configuration.getLogType());
 
-        if (configuration.getPayload() != null && !configuration.getPayload().isEmpty()) {
-            String payload = templateEngine.evalNow(configuration.getPayload(), String.class);
-            request.payload(SdkBytes.fromUtf8String(payload));
-        }
+                if (configuration.getPayload() != null && !configuration.getPayload().isEmpty()) {
+                    String payload = templateEngine.evalNow(configuration.getPayload(), String.class);
+                    awsRequest.payload(SdkBytes.fromUtf8String(payload));
+                }
 
-        // invoke the lambda function and inspect the result...
-        return lambdaClient.invoke(request.build());
+                return awsRequest;
+            })
+            .thenCompose(awsRequest -> {
+                // invoke the lambda function and inspect the result...
+                return lambdaClient.invoke(awsRequest.build());
+            });
     }
 
     protected LambdaAsyncClient initLambdaClient() {
@@ -290,7 +292,7 @@ public class AwsLambdaPolicyV3 {
 
     private void invokeLambda(ExecutionContext context, Consumer<InvokeResponse> onSuccess, Consumer<PolicyResult> onError) {
         invokeLambda(context.getTemplateEngine())
-            .whenComplete((InvokeResponse result, Throwable throwable) -> {
+            .whenCompleteAsync((InvokeResponse result, Throwable throwable) -> {
                 // Lambda will return an HTTP status code will be in the 200 range for successful
                 // request, even if an error occurred in the Lambda function itself. Here, we check
                 // if an error occurred via getFunctionError() before checking the status code.
