@@ -1,0 +1,99 @@
+{
+    "id": "aws-lambda-message-response",
+    "name": "aws-lambda-message-response",
+    "apiVersion": "1.0",
+    "definitionVersion": "4.0.0",
+    "type": "message",
+    "description": "API v4 using HTTP-GET entrypoint",
+    "listeners": [
+        {
+            "type": "http",
+            "paths": [
+                {
+                    "path": "/message-response"
+                }
+            ],
+            "entrypoints": [
+                {
+                    "type": "http-get",
+                    "configuration": {
+                        "messagesLimitCount": 12,
+                        "messagesLimitDurationMs": 500
+                    }
+                }
+            ]
+        }
+    ],
+    "endpointGroups": [
+        {
+            "name": "default",
+            "type": "mock",
+            "endpoints": [
+                {
+                    "name": "default-endpoint",
+                    "type": "mock",
+                    "weight": 1,
+                    "inheritConfiguration": false,
+                    "configuration": {
+                        "messageInterval": 1,
+                        "messageContent": "message",
+                        "messageCount": 1000
+                    }
+                }
+            ]
+        }
+    ],
+    "analytics": {
+        "enabled": false
+    },
+    "flows": [
+        {
+            "name": "flow-1",
+            "enabled": true,
+            "selectors": [
+                {
+                    "type": "http",
+                    "path": "/:newTopic",
+                    "pathOperator": "STARTS_WITH"
+                }
+            ],
+            "request": [],
+            "response": [
+                {
+                    "name": "AWS Lambda",
+                    "description": "",
+                    "enabled": true,
+                    "policy": "aws-lambda-test-policy",
+                    "configuration": {
+                        "scope": "REQUEST",
+                        "region": "us-east-1",
+                        "accessKey": "accessKey",
+                        "secretKey": "secretKey",
+                        "function": "lambda-example",
+                        "payload": "{ \"key\": \"value\" }",
+                        "invocationType": "RequestResponse",
+                        "roleSessionName": "gravitee",
+                        "logType": "None",
+                        "variables": [
+                            {
+                                "name": "lambdaResponse",
+                                "value": "{#jsonPath(#lambdaResponse.content, '$')}"
+                            }
+                        ],
+                        "sendToConsumer": false,
+                        "endpoint": "http://localhost:9999"
+                    }
+                },
+                {
+                    "name": "Copy Aws Lambda Attribute",
+                    "description": "",
+                    "enabled": true,
+                    "policy": "copy-aws-lambda-attribute",
+                    "configuration": {}
+                }
+            ],
+            "subscribe": [],
+            "publish": []
+        }
+    ]
+}
