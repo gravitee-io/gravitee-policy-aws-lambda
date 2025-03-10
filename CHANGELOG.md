@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.3.0...1.3.1) (2025-03-10)
+
+
+### Bug Fixes
+
+* revert pr 109 ([37078eb](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/37078ebfdf9c6206cb326ab9e564030bc8118ca2))
+
 # [1.3.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.2.0...1.3.0) (2025-03-10)
 
 
