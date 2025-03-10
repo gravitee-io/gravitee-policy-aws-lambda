@@ -37,7 +37,7 @@ By default, the lambda is called in addition to the backend, meaning the consume
 
 .^|scope
 ^.^|X
-|The scope on which apply the policy (Only relevant for v2 APIs)
+|The scope on which apply the policy
 ^.^|string
 ^.^|REQUEST
 

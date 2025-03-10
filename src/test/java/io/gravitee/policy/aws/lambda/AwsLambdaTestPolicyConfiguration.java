@@ -15,18 +15,14 @@
  */
 package io.gravitee.policy.aws.lambda;
 
+import com.amazonaws.services.lambda.model.InvocationType;
+import com.amazonaws.services.lambda.model.LogType;
 import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import io.gravitee.policy.aws.lambda.configuration.PolicyScope;
 import io.gravitee.policy.aws.lambda.configuration.Variable;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import software.amazon.awssdk.services.lambda.model.InvocationType;
-import software.amazon.awssdk.services.lambda.model.LogType;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
 public class AwsLambdaTestPolicyConfiguration extends AwsLambdaPolicyConfiguration {
 
     private PolicyScope scope = PolicyScope.REQUEST;
@@ -39,7 +35,7 @@ public class AwsLambdaTestPolicyConfiguration extends AwsLambdaPolicyConfigurati
 
     private String payload;
 
-    private String invocationType = InvocationType.REQUEST_RESPONSE.toString();
+    private InvocationType invocationType = InvocationType.RequestResponse;
 
     private String qualifier;
 
@@ -47,11 +43,123 @@ public class AwsLambdaTestPolicyConfiguration extends AwsLambdaPolicyConfigurati
 
     private String roleSessionName = "gravitee";
 
-    private String logType = LogType.NONE.toString();
+    private LogType logType = LogType.None;
 
     private List<Variable> variables = new ArrayList<>();
 
     private boolean sendToConsumer;
 
     private String endpoint;
+
+    public InvocationType getInvocationType() {
+        return invocationType;
+    }
+
+    public void setInvocationType(InvocationType invocationType) {
+        this.invocationType = invocationType;
+    }
+
+    public String getQualifier() {
+        return qualifier;
+    }
+
+    public void setQualifier(String qualifier) {
+        this.qualifier = qualifier;
+    }
+
+    public String getRoleArn() {
+        return roleArn;
+    }
+
+    public void setRoleArn(String roleArn) {
+        this.roleArn = roleArn;
+    }
+
+    public String getRoleSessionName() {
+        return roleSessionName;
+    }
+
+    public void setRoleSessionName(String roleSessionName) {
+        this.roleSessionName = roleSessionName;
+    }
+
+    public LogType getLogType() {
+        return logType;
+    }
+
+    public void setLogType(LogType logType) {
+        this.logType = logType;
+    }
+
+    public PolicyScope getScope() {
+        return scope;
+    }
+
+    public void setScope(PolicyScope scope) {
+        this.scope = scope;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public void setPayload(String payload) {
+        this.payload = payload;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
+
+    public String getFunction() {
+        return function;
+    }
+
+    public void setFunction(String function) {
+        this.function = function;
+    }
+
+    public List<Variable> getVariables() {
+        return variables;
+    }
+
+    public void setVariables(List<Variable> variables) {
+        this.variables = variables;
+    }
+
+    public boolean isSendToConsumer() {
+        return sendToConsumer;
+    }
+
+    public void setSendToConsumer(boolean sendToConsumer) {
+        this.sendToConsumer = sendToConsumer;
+    }
+
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+    }
 }

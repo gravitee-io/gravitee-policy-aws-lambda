@@ -31,16 +31,20 @@
     <parent>
         <groupId>io.gravitee</groupId>
         <artifactId>gravitee-parent</artifactId>
-        <version>23.0.2</version>
+        <version>22.1.1</version>
     </parent>
 
     <properties>
-        <gravitee-apim-bom.version>4.7.0-alpha.1</gravitee-apim-bom.version>
-        <gravitee-entrypoint-http-get.version>2.1.0</gravitee-entrypoint-http-get.version>
-        <gravitee-reactor-message.version>6.0.0</gravitee-reactor-message.version>
-        <aws-java-sdk.version>2.30.26</aws-java-sdk.version>
+        <gravitee-bom.version>8.1.0</gravitee-bom.version>
+        <gravitee-apim.version>4.3.7</gravitee-apim.version>
+        <gravitee-gateway-api.version>3.5.0</gravitee-gateway-api.version>
+        <gravitee-policy-api.version>1.11.0</gravitee-policy-api.version>
+        <gravitee-common.version>4.4.0</gravitee-common.version>
+        <aws-java-sdk.version>1.12.748</aws-java-sdk.version>
 
         <maven-plugin-assembly.version>3.5.0</maven-plugin-assembly.version>
+        <maven-plugin-prettier.version>0.19</maven-plugin-prettier.version>
+        <maven-plugin-prettier.prettierjava.version>2.0.0</maven-plugin-prettier.prettierjava.version>
         <maven-plugin-properties.version>1.1.0</maven-plugin-properties.version>
 
         <!-- Property used by the publication job in CI-->
@@ -51,9 +55,9 @@
         <dependencies>
             <!-- Import bom to properly inherit all dependencies -->
             <dependency>
-                <groupId>io.gravitee.apim</groupId>
-                <artifactId>gravitee-apim-bom</artifactId>
-                <version>${gravitee-apim-bom.version}</version>
+                <groupId>io.gravitee</groupId>
+                <artifactId>gravitee-bom</artifactId>
+                <version>${gravitee-bom.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -65,50 +69,34 @@
         <dependency>
             <groupId>io.gravitee.gateway</groupId>
             <artifactId>gravitee-gateway-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.gravitee.apim.gateway.handlers</groupId>
-            <artifactId>gravitee-apim-gateway-handlers-api</artifactId>
-            <version>${gravitee-apim-bom.version}</version>
+            <version>${gravitee-gateway-api.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>io.gravitee.policy</groupId>
             <artifactId>gravitee-policy-api</artifactId>
+            <version>${gravitee-policy-api.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>io.gravitee.common</groupId>
             <artifactId>gravitee-common</artifactId>
+            <version>${gravitee-common.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>lambda</artifactId>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-lambda</artifactId>
             <version>${aws-java-sdk.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>sts</artifactId>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sts</artifactId>
             <version>${aws-java-sdk.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-buffer</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-common</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <!-- Vert.x -->
@@ -141,31 +129,12 @@
         <dependency>
             <groupId>io.gravitee.apim.gateway</groupId>
             <artifactId>gravitee-apim-gateway-tests-sdk</artifactId>
-            <version>${gravitee-apim-bom.version}</version>
+            <version>${gravitee-apim.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.gravitee.apim.plugin.entrypoint</groupId>
-            <artifactId>gravitee-apim-plugin-entrypoint-http-proxy</artifactId>
-            <version>${gravitee-apim-bom.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.gravitee.apim.plugin.endpoint</groupId>
-            <artifactId>gravitee-apim-plugin-endpoint-http-proxy</artifactId>
-            <version>${gravitee-apim-bom.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.graviteesource.entrypoint</groupId>
-            <artifactId>gravitee-entrypoint-http-get</artifactId>
-            <version>${gravitee-entrypoint-http-get.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.graviteesource.reactor</groupId>
-            <artifactId>gravitee-reactor-message</artifactId>
-            <version>${gravitee-reactor-message.version}</version>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -214,6 +183,22 @@
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.hubspot.maven.plugins</groupId>
+                <artifactId>prettier-maven-plugin</artifactId>
+                <version>${maven-plugin-prettier.version}</version>
+                <configuration>
+                    <prettierJavaVersion>${maven-plugin-prettier.prettierjava.version}</prettierJavaVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>
