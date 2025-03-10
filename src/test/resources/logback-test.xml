@@ -10,12 +10,12 @@
 	</appender>
 
 	<!-- only gravitee Logs in debug -->
-	<logger name="io.gravitee" level="debug" additivity="false">
+	<logger name="io.gravitee" level="ERROR" additivity="false">
 		<appender-ref ref="STDOUT" />
 	</logger>
 
 	<!-- Root Logger -->
-	<root level="warn">
+	<root level="ERROR">
 		<appender-ref ref="STDOUT" />
 	</root>
 </configuration>

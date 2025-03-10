@@ -15,7 +15,9 @@
  */
 package io.gravitee.policy.aws.lambda.el;
 
-import software.amazon.awssdk.services.lambda.model.InvokeResponse;
+import com.amazonaws.services.lambda.model.InvokeResult;
+import io.gravitee.common.http.HttpHeaders;
+import io.vertx.core.http.HttpClientResponse;
 
 /**
  * @author Florent CHAMFROY (florent.chamfroy at graviteesource.com)
@@ -23,16 +25,16 @@ import software.amazon.awssdk.services.lambda.model.InvokeResponse;
  */
 public class LambdaResponse {
 
-    private final InvokeResponse result;
+    private final InvokeResult result;
     private final String content;
 
-    public LambdaResponse(final InvokeResponse result) {
+    public LambdaResponse(final InvokeResult result) {
         this.result = result;
-        this.content = new String(result.payload().asByteArray());
+        this.content = new String(result.getPayload().array());
     }
 
     public int getStatus() {
-        return result.statusCode();
+        return result.getStatusCode();
     }
 
     public String getContent() {

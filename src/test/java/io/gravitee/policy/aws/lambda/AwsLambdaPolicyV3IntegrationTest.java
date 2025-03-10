@@ -15,12 +15,17 @@
  */
 package io.gravitee.policy.aws.lambda;
 
-import io.gravitee.apim.gateway.tests.sdk.annotations.GatewayTest;
+import io.gravitee.apim.gateway.tests.sdk.configuration.GatewayConfigurationBuilder;
 import io.gravitee.definition.model.Api;
 import io.gravitee.definition.model.ExecutionMode;
 
-@GatewayTest(v2ExecutionMode = ExecutionMode.V3)
 public class AwsLambdaPolicyV3IntegrationTest extends AwsLambdaPolicyIntegrationTest {
+
+    @Override
+    protected void configureGateway(GatewayConfigurationBuilder gatewayConfigurationBuilder) {
+        super.configureGateway(gatewayConfigurationBuilder);
+        gatewayConfigurationBuilder.set("api.jupiterMode.enabled", "false");
+    }
 
     @Override
     public void configureApi(Api api) {

@@ -15,28 +15,24 @@
  */
 package io.gravitee.policy.aws.lambda;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
-import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
-import static com.github.tomakehurst.wiremock.client.WireMock.forbidden;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.ok;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import io.gravitee.apim.gateway.tests.sdk.AbstractGatewayTest;
 import io.gravitee.apim.gateway.tests.sdk.AbstractPolicyTest;
 import io.gravitee.apim.gateway.tests.sdk.annotations.DeployApi;
 import io.gravitee.apim.gateway.tests.sdk.annotations.GatewayTest;
 import io.gravitee.apim.gateway.tests.sdk.configuration.GatewayConfigurationBuilder;
 import io.gravitee.apim.gateway.tests.sdk.policy.PolicyBuilder;
-import io.gravitee.common.http.HttpStatusCode;
 import io.gravitee.definition.model.Api;
 import io.gravitee.definition.model.ExecutionMode;
+import io.gravitee.el.TemplateContext;
+import io.gravitee.el.TemplateEngine;
+import io.gravitee.gateway.reactive.api.context.ExecutionContext;
 import io.gravitee.gateway.reactor.ReactableApi;
 import io.gravitee.plugin.policy.PolicyPlugin;
 import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
@@ -44,27 +40,30 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.rxjava3.core.http.HttpClient;
 import io.vertx.rxjava3.core.http.HttpClientRequest;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import org.junit.Before;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 @GatewayTest
 @DeployApi(
     {
-        "/apis/v2/aws-lambda-on-request.json",
-        "/apis/v2/aws-lambda-on-request-content.json",
-        "/apis/v2/aws-lambda-on-response.json",
-        "/apis/v2/aws-lambda-on-response-content.json",
-        "/apis/v2/aws-lambda-with-send-to-consumer.json",
+        "/apis/aws-lambda-on-request.json",
+        "/apis/aws-lambda-on-request-content.json",
+        "/apis/aws-lambda-on-response.json",
+        "/apis/aws-lambda-on-response-content.json",
+        "/apis/aws-lambda-with-send-to-consumer.json",
     }
 )
-public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambdaTestPolicy, AwsLambdaTestPolicyConfiguration> {
+public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambdaPolicy, AwsLambdaPolicyConfiguration> {
 
-    protected WireMockServer awsLambdaMock;
+    private WireMockServer awsLambdaMock;
 
     public AwsLambdaPolicyIntegrationTest() {
         awsLambdaMock = new WireMockServer(wireMockConfig().dynamicPort());
@@ -80,17 +79,10 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
 
     @Override
     public void configurePolicies(Map<String, PolicyPlugin> policies) {
-        policies.putIfAbsent(
-            CopyAwsLambdaAttributePolicy.COPY_AWS_LAMBDA_ATTRIBUTE_POLICY,
-            PolicyBuilder.build(CopyAwsLambdaAttributePolicy.COPY_AWS_LAMBDA_ATTRIBUTE_POLICY, CopyAwsLambdaAttributePolicy.class)
-        );
-        policies.putIfAbsent(
-            AwsLambdaTestPolicy.AWS_LAMBDA_TEST_POLICY,
-            PolicyBuilder.build(
-                AwsLambdaTestPolicy.AWS_LAMBDA_TEST_POLICY,
-                AwsLambdaTestPolicy.class,
-                AwsLambdaTestPolicyConfiguration.class
-            )
+        policies.put("copy-aws-lambda-attribute", PolicyBuilder.build("copy-aws-lambda-attribute", CopyAwsLambdaAttributePolicy.class));
+        policies.put(
+            "aws-lambda-test-policy",
+            PolicyBuilder.build("aws-lambda-test-policy", AwsLambdaTestPolicy.class, AwsLambdaTestPolicyConfiguration.class)
         );
     }
 
@@ -106,9 +98,19 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
             ((Api) api.getDefinition()).setExecutionMode(ExecutionMode.V3);
             ((Api) api.getDefinition()).getFlows()
                 .forEach(flow -> {
-                    Stream
-                        .concat(flow.getPre().stream(), flow.getPost().stream())
-                        .filter(policy -> AwsLambdaTestPolicy.AWS_LAMBDA_TEST_POLICY.equals(policy.getPolicy()))
+                    flow
+                        .getPre()
+                        .stream()
+                        .filter(policy -> "aws-lambda-test-policy".equals(policy.getPolicy()))
+                        .findFirst()
+                        .ifPresent(policy -> {
+                            policy.setConfiguration(policy.getConfiguration().replace("http://localhost:9999", awsLambdaMock.baseUrl()));
+                        });
+
+                    flow
+                        .getPost()
+                        .stream()
+                        .filter(policy -> "aws-lambda-test-policy".equals(policy.getPolicy()))
                         .findFirst()
                         .ifPresent(policy -> {
                             policy.setConfiguration(policy.getConfiguration().replace("http://localhost:9999", awsLambdaMock.baseUrl()));
@@ -120,7 +122,7 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
     @ParameterizedTest
     @MethodSource("providePath")
     @DisplayName("Should use AWS Lambda policy and return error from AWS")
-    void shouldUseAwsLambdaPolicyAndReturnError(String path, int endpointCallCount, HttpClient client) {
+    void shouldUseAwsLambdaPolicyAndReturnError(String path, int endpointCallCount, HttpClient client) throws Exception {
         wiremock.stubFor(get("/endpoint").willReturn(ok("response from backend")));
         awsLambdaMock.stubFor(post(anyUrl()).willReturn(forbidden()));
 
@@ -128,11 +130,11 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
             .rxRequest(HttpMethod.GET, path)
             .flatMap(HttpClientRequest::rxSend)
             .flatMapPublisher(response -> {
-                assertThat(response.statusCode()).isEqualTo(HttpStatusCode.INTERNAL_SERVER_ERROR_500);
+                assertThat(response.statusCode()).isEqualTo(500);
                 return response.toFlowable();
             })
             .test()
-            .awaitDone(10, TimeUnit.SECONDS)
+            .await()
             .assertComplete()
             .assertValue(error -> {
                 assertThat(error.toString()).contains("An error occurs while invoking lambda function.");
@@ -150,7 +152,8 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
     @ParameterizedTest
     @MethodSource("providePathAndResponse")
     @DisplayName("Should use AWS Lambda policy and set response as attribute")
-    void shouldUseAwsLambdaPolicyAndSetResponseAsAttribute(String path, String responseBody, HttpClient client) {
+    void shouldUseAwsLambdaPolicyAndSetResponseAsAttribute(String path, String responseBody, HttpClient client)
+        throws InterruptedException {
         wiremock.stubFor(get("/endpoint").willReturn(ok("response from backend")));
         awsLambdaMock.stubFor(post(anyUrl()).willReturn(ok("response from lambda")));
 
@@ -162,7 +165,7 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
                 return response.toFlowable();
             })
             .test()
-            .awaitDone(10, TimeUnit.SECONDS)
+            .await()
             .assertComplete()
             .assertValue(body -> {
                 assertThat(body.toString()).isEqualTo(responseBody);
@@ -174,7 +177,7 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
         awsLambdaMock.verify(postRequestedFor(urlMatching("/\\d{4}-\\d{2}-\\d{2}/functions/lambda-example/invocations")));
     }
 
-    protected Stream<Arguments> providePath() {
+    private static Stream<Arguments> providePath() {
         return Stream.of(
             Arguments.of("/on-request", 0),
             Arguments.of("/on-request-content", 0),
@@ -183,7 +186,7 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
         );
     }
 
-    protected Stream<Arguments> providePathAndResponse() {
+    private static Stream<Arguments> providePathAndResponse() {
         return Stream.of(
             Arguments.of("/on-request", "response from lambda"),
             Arguments.of("/on-response", "response from lambda"),

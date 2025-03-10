@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.policy.aws.lambda.invokers;
+package io.gravitee.policy.aws.lambda;
 
+import com.amazonaws.services.lambda.model.InvokeResult;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Invoker;
 import io.gravitee.gateway.api.buffer.Buffer;
@@ -24,32 +25,28 @@ import io.gravitee.gateway.api.http.HttpHeaders;
 import io.gravitee.gateway.api.proxy.ProxyConnection;
 import io.gravitee.gateway.api.proxy.ProxyResponse;
 import io.gravitee.gateway.api.stream.ReadStream;
-import lombok.Getter;
-import lombok.Setter;
-import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.services.lambda.model.InvokeResponse;
+import java.nio.ByteBuffer;
 
 /**
- * Invoker allowing to delegate invocation to the specified invoker or replace the invocation response with the provided lambda response (aka {@link InvokeResponse}).
+ * Invoker allowing to delegate invocation to the specified invoker or replace the invocation response with the provided lambda respinse (aka {@link InvokeResult}).
  *
  * @author Jeoffrey HAEYAERT (jeoffrey.haeyaert at graviteesource.com)
  * @author GraviteeSource Team
  */
-@Setter
-@Getter
-public class LambdaInvokerV3 implements Invoker {
+public class LambdaInvoker implements Invoker {
 
     private final Invoker delegate;
     private final boolean invokeDelegate;
-    private InvokeResponse invokeResponse;
 
-    public LambdaInvokerV3(boolean invokeDelegate, Invoker delegate, InvokeResponse invokeResponse) {
+    private InvokeResult invokeResult;
+
+    LambdaInvoker(boolean invokeDelegate, Invoker delegate, InvokeResult invokeResult) {
         this.invokeDelegate = invokeDelegate;
         this.delegate = delegate;
-        this.invokeResponse = invokeResponse;
+        this.invokeResult = invokeResult;
     }
 
-    public LambdaInvokerV3(boolean invokeDelegate, Invoker delegate) {
+    public LambdaInvoker(boolean invokeDelegate, Invoker delegate) {
         this.invokeDelegate = invokeDelegate;
         this.delegate = delegate;
     }
@@ -72,6 +69,14 @@ public class LambdaInvokerV3 implements Invoker {
         } else {
             delegate.invoke(context, stream, connectionHandler);
         }
+    }
+
+    public InvokeResult getInvokeResult() {
+        return invokeResult;
+    }
+
+    public void setInvokeResult(InvokeResult invokeResult) {
+        this.invokeResult = invokeResult;
     }
 
     class LambdaProxyConnection implements ProxyConnection {
@@ -114,16 +119,16 @@ public class LambdaInvokerV3 implements Invoker {
         }
 
         private void init() {
-            SdkBytes payload = invokeResponse.payload();
+            ByteBuffer payload = invokeResult.getPayload();
 
             if (payload != null) {
-                headers.set(HttpHeaderNames.CONTENT_LENGTH, Integer.toString(payload.asByteArray().length));
+                headers.set(HttpHeaderNames.CONTENT_LENGTH, Integer.toString(payload.array().length));
             }
         }
 
         @Override
         public int status() {
-            return invokeResponse.statusCode();
+            return invokeResult.getStatusCode();
         }
 
         @Override
@@ -145,10 +150,10 @@ public class LambdaInvokerV3 implements Invoker {
 
         @Override
         public ReadStream<Buffer> resume() {
-            SdkBytes payload = invokeResponse.payload();
+            ByteBuffer payload = invokeResult.getPayload();
 
             if (payload != null) {
-                bodyHandler.handle(Buffer.buffer(payload.asByteArray()));
+                bodyHandler.handle(Buffer.buffer(payload.array()));
             }
 
             endHandler.handle(null);
