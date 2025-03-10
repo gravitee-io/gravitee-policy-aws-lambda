@@ -23,6 +23,19 @@ endif::[]
 
 |===
 
+== Compatibility with APIM
+
+|===
+|Plugin version    | APIM version       | JDK version
+
+| 2.x              | 4.7.x and later    | 21
+| 1.x              | 3.x to 4.6.x       | 17
+
+|===
+
+WARNING: The version 1.3.0 should not be used.
+
+
 == Description
 
 AWS Lambda policy can be used to request a Lambda instead of or in addition to the backend.
