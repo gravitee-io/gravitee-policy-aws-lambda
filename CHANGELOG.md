@@ -1,3 +1,31 @@
+# [2.0.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.3.1...2.0.0) (2025-03-10)
+
+
+### chore
+
+* bump aws java sdk to 2.30.26 ([ad64c97](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/ad64c9790252157f9f16e40a4a97d3408086fde4))
+* use gravitee-apim-bom in aws lambda policy ([c3ce44a](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/c3ce44a84a738d6c2e3528186d70361bf78bc706))
+
+
+### Features
+
+* add task file to build and copy the plugin easily on APIM ([83961f8](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/83961f89a4743c9de47f0e7dc8556077a888ff5f))
+* hide scope in policy studio v4 ([c861d41](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/c861d41d525816a191efeff7217d2f984a80e46c))
+* implement aws lambda policy for V4 APIs ([0ef1925](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/0ef1925201d0e18d0b361ed671ceb8201aa0e1bc))
+
+
+### BREAKING CHANGES
+
+* implementation has changed and use sdk v2 now
+
+(cherry picked from commit 9783474d1b01007e931a9bc1cbf02b3943615420)
+* Updating this sdk changes all the implementation of the policy
+
+(cherry picked from commit 73435a3a69c7ca270c6076fcac5ab3e6f24d9ce1)
+* require at least APIM 4.7
+
+(cherry picked from commit ce8ce2e98d3894e5f6a64a7a3679a76a20043f40)
+
 ## [1.3.1](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.3.0...1.3.1) (2025-03-10)
 
 
