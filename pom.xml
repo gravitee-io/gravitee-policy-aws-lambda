@@ -23,7 +23,7 @@
 
     <groupId>io.gravitee.policy</groupId>
     <artifactId>gravitee-policy-aws-lambda</artifactId>
-    <version>1.2.0</version>
+    <version>1.3.0</version>
 
     <name>Gravitee.io APIM - Policy - AWS Lambda Function</name>
     <description>Allows to request Lambda instead of or in addition to the backend</description>

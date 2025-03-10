@@ -1,3 +1,12 @@
+# [1.3.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.2.0...1.3.0) (2025-03-10)
+
+
+### Features
+
+* add task file to build and copy the plugin easily on APIM ([90ec926](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/90ec926b7941241ffd698a1405911ad35517cb9c))
+* hide scope in policy studio v4 ([a4b704e](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/a4b704eb2319f2a68369c8a3abb1f9dc871a78fe))
+* implement aws lambda policy for V4 APIs ([9783474](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/9783474d1b01007e931a9bc1cbf02b3943615420))
+
 # [1.2.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.1.2...1.2.0) (2024-06-25)
 
 
