@@ -28,7 +28,8 @@ endif::[]
 |===
 |Plugin version    | APIM version       | JDK version
 
-| 2.x              | 4.7.x and later    | 21
+| 3.x              | 4.8.x and later    | 21
+| 2.x              | 4.7.x              | 21
 | 1.x              | 3.x to 4.6.x       | 17
 
 |===
