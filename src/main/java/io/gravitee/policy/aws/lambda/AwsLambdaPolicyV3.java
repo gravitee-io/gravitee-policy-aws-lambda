@@ -39,6 +39,7 @@ import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import io.gravitee.policy.aws.lambda.configuration.PolicyScope;
 import io.gravitee.policy.aws.lambda.el.LambdaResponse;
 import io.gravitee.policy.aws.lambda.invokers.LambdaInvokerV3;
+import io.gravitee.policy.aws.lambda.sdk.AWSCredentialsProviderChain;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import java.util.concurrent.CompletableFuture;
@@ -286,7 +287,7 @@ public class AwsLambdaPolicyV3 {
             // {@see http://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html}
             return StaticCredentialsProvider.create(credentials);
         } else {
-            return DefaultCredentialsProvider.create();
+            return AWSCredentialsProviderChain.INSTANCE;
         }
     }
 
