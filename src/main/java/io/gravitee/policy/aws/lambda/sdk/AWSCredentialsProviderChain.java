@@ -35,6 +35,7 @@ public class AWSCredentialsProviderChain extends com.amazonaws.auth.AWSCredentia
             new AWSCredentialsProvider[] {
                 new EnvironmentVariableCredentialsProvider(),
                 new SystemPropertiesCredentialsProvider(),
+                WebIdentityTokenCredentialsProvider.create(),
                 new ProfileCredentialsProvider(),
                 new EC2ContainerCredentialsProviderWrapper(),
                 new InstanceProfileCredentialsProvider(false),
