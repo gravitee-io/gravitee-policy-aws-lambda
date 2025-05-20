@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.3.1...1.3.2) (2025-05-20)
+
+
+### Bug Fixes
+
+* include WebIdentityTokenCredentialsProvider in the credentials provider chain ([4ae508d](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/4ae508d4a295cbfffe59db21742a60fe440a4d9b))
+
 ## [1.3.1](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/1.3.0...1.3.1) (2025-03-10)
 
 
