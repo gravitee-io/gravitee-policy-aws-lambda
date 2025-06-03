@@ -1,3 +1,15 @@
+# [3.0.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/2.0.0...3.0.0) (2025-06-03)
+
+
+### chore
+
+* **deps:** bump gravitee-apim to 4.8.0-SNAPSHOT ([60c8b1f](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/60c8b1f49b51ee825f9bfc6214504f300e44f43c))
+
+
+### BREAKING CHANGES
+
+* **deps:** require at least APIM 4.8
+
 # [3.0.0-alpha.1](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/2.0.0...3.0.0-alpha.1) (2025-04-22)
 
 
