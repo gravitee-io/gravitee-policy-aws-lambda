@@ -37,7 +37,7 @@
     <properties>
         <gravitee-apim-bom.version>4.8.0-alpha.2</gravitee-apim-bom.version>
         <gravitee-entrypoint-http-get.version>2.1.0</gravitee-entrypoint-http-get.version>
-        <gravitee-reactor-message.version>7.0.0-alpha.3</gravitee-reactor-message.version>
+        <gravitee-reactor-message.version>7.0.0</gravitee-reactor-message.version>
         <aws-java-sdk.version>2.31.26</aws-java-sdk.version>
 
         <maven-plugin-assembly.version>3.7.1</maven-plugin-assembly.version>
