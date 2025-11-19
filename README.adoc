@@ -63,13 +63,13 @@ By default, the lambda is called in addition to the backend, meaning the consume
 
 .^|accessKey
 ^.^|
-|AWS Access Key
+|AWS Access Key. It can be stored in vault and referred via the Gravitee expression language.
 ^.^|string
 ^.^|-
 
 .^|secretKey
 ^.^|
-|AWS Secret Key
+|AWS Secret Key. It can be stored in vault and referred via the Gravitee expression language.
 ^.^|string
 ^.^|-
 
@@ -119,7 +119,7 @@ DryRun – Validate parameter values and verify that the user or role has permis
 
 .^|roleArn
 ^.^|-
-|The arn of the role to be assumed. This is used when authentication is relying on the AWS Security Token Service (STS) to assume a Role and create temporary, short-lived sessions to use for authentication.
+|The arn of the role to be assumed. This is used when authentication is relying on the AWS Security Token Service (STS) to assume a Role and create temporary, short-lived sessions to use for authentication. It can be stored in vault and referred via the Gravitee expression language.
 ^.^|string
 ^.^|-
 
@@ -132,10 +132,11 @@ DryRun – Validate parameter values and verify that the user or role has permis
 |===
 
 == Examples
-
+Without expression language:
 [source, json]
 ----
-"configuration": {
+{
+  "configuration": {
     "variables": [
       {
         "name": "lambdaResponse",
@@ -150,9 +151,32 @@ DryRun – Validate parameter values and verify that the user or role has permis
     "region": "us-east-1",
     "sendToConsumer": true,
     "endpoint": "http://aws-lambda-url/function"
+  }
 }
 ----
-
+With expression language support:
+[source, json]
+----
+{
+  "configuration": {
+    "variables": [
+      {
+        "name": "lambdaResponse",
+        "value": "{#jsonPath(#lambdaResponse.content, '$')}"
+      }
+    ],
+    "secretKey": "{#secrets.get('/vault/secret/aws:secretKey')}",
+    "accessKey": "{#secrets.get('/vault/secret/aws:accessKey')}",
+    "roleArn": " {#secrets.get('/vault/secret/aws:roleArn')}",
+    "payload": "{ \"key\": \"value\" }",
+    "scope": "REQUEST",
+    "function": "lambda-example",
+    "region": "us-east-1",
+    "sendToConsumer": true,
+    "endpoint": "http://aws-lambda-url/function"
+  }
+}
+----
 == Errors
 
 === Default error

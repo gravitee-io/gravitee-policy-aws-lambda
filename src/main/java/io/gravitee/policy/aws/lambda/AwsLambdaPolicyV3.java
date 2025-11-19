@@ -34,11 +34,11 @@ import io.gravitee.policy.api.annotations.OnRequest;
 import io.gravitee.policy.api.annotations.OnRequestContent;
 import io.gravitee.policy.api.annotations.OnResponse;
 import io.gravitee.policy.api.annotations.OnResponseContent;
-import io.gravitee.policy.aws.lambda.configuration.AwsLambdaError;
 import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import io.gravitee.policy.aws.lambda.configuration.PolicyScope;
 import io.gravitee.policy.aws.lambda.el.LambdaResponse;
 import io.gravitee.policy.aws.lambda.invokers.LambdaInvokerV3;
+import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import java.util.concurrent.CompletableFuture;
@@ -64,16 +64,17 @@ import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 @Slf4j
 public class AwsLambdaPolicyV3 {
 
+    private LambdaAsyncClient lambdaClient;
+
     protected final AwsLambdaPolicyConfiguration configuration;
+
     protected static final String TEMPLATE_VARIABLE = "lambdaResponse";
-    private final LambdaAsyncClient lambdaClient;
     private static final String LAMBDA_RESULT_ATTR = "LAMBDA_RESULT";
     private static final String REQUEST_TEMPLATE_VARIABLE = "request";
     private static final String RESPONSE_TEMPLATE_VARIABLE = "response";
 
     public AwsLambdaPolicyV3(AwsLambdaPolicyConfiguration configuration) {
         this.configuration = configuration;
-        lambdaClient = initLambdaClient();
     }
 
     @OnRequest
@@ -223,63 +224,69 @@ public class AwsLambdaPolicyV3 {
         };
     }
 
-    protected CompletableFuture<InvokeResponse> invokeLambda(TemplateEngine templateEngine) {
-        return CompletableFuture
-            .supplyAsync(() -> {
-                InvokeRequest.Builder awsRequest = InvokeRequest
-                    .builder()
-                    .functionName(configuration.getFunction())
-                    .invocationType(configuration.getInvocationType())
-                    .qualifier(configuration.getQualifier())
-                    .logType(configuration.getLogType());
+    protected CompletableFuture<InvokeResponse> invokeLambda(Single<AwsLambdaPolicyConfiguration> configuration) {
+        return configuration
+            .flatMap(config -> {
+                lambdaClient = initLambdaClient(config);
+                InvokeRequest.Builder awsRequest = buildRequest(config);
 
-                if (configuration.getPayload() != null && !configuration.getPayload().isEmpty()) {
-                    String payload = templateEngine.evalNow(configuration.getPayload(), String.class);
-                    awsRequest.payload(SdkBytes.fromUtf8String(payload));
-                }
-
-                return awsRequest;
+                return Single.fromFuture(lambdaClient.invoke(awsRequest.build()));
             })
-            .thenCompose(awsRequest -> {
-                // invoke the lambda function and inspect the result...
-                return lambdaClient.invoke(awsRequest.build());
-            });
+            .toCompletionStage()
+            .toCompletableFuture();
     }
 
-    protected LambdaAsyncClient initLambdaClient() {
-        AwsCredentialsProvider awsCredentialsProvider;
+    private static InvokeRequest.Builder buildRequest(AwsLambdaPolicyConfiguration config) {
+        InvokeRequest.Builder awsRequest = InvokeRequest
+            .builder()
+            .functionName(config.getFunction())
+            .invocationType(config.getInvocationType())
+            .qualifier(config.getQualifier())
+            .logType(config.getLogType());
 
-        if (configuration.getRoleArn() != null && !configuration.getRoleArn().isEmpty()) {
-            awsCredentialsProvider = createSTSCredentialsProvider();
-        } else {
-            awsCredentialsProvider = getAWSCredentialsProvider();
+        if (config.getPayload() != null && !config.getPayload().isEmpty()) {
+            awsRequest.payload(SdkBytes.fromUtf8String(config.getPayload()));
         }
 
-        return LambdaAsyncClient.builder().credentialsProvider(awsCredentialsProvider).region(Region.of(configuration.getRegion())).build();
+        return awsRequest;
     }
 
-    private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider() {
+    protected LambdaAsyncClient initLambdaClient(AwsLambdaPolicyConfiguration config) {
+        AwsCredentialsProvider awsCredentialsProvider;
+        String accessKey = config.getAccessKey();
+        String secretKey = config.getSecretKey();
+        String roleArn = config.getRoleArn();
+
+        if (roleArn != null && !roleArn.isEmpty()) {
+            awsCredentialsProvider = createSTSCredentialsProvider(accessKey, secretKey, roleArn);
+        } else {
+            awsCredentialsProvider = getAWSCredentialsProvider(accessKey, secretKey);
+        }
+
+        String region = config.getRegion();
+
+        return LambdaAsyncClient.builder().credentialsProvider(awsCredentialsProvider).region(Region.of(region)).build();
+    }
+
+    private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider(String accessKey, String secretKey, String roleArn) {
         return StsAssumeRoleCredentialsProvider
             .builder()
-            .refreshRequest(() ->
-                AssumeRoleRequest.builder().roleArn(configuration.getRoleArn()).roleSessionName(configuration.getRoleSessionName()).build()
-            )
+            .refreshRequest(() -> AssumeRoleRequest.builder().roleArn(roleArn).roleSessionName(configuration.getRoleSessionName()).build())
             .stsClient(
-                StsClient.builder().credentialsProvider(getAWSCredentialsProvider()).region(Region.of(configuration.getRegion())).build()
+                StsClient
+                    .builder()
+                    .credentialsProvider(getAWSCredentialsProvider(accessKey, secretKey))
+                    .region(Region.of(configuration.getRegion()))
+                    .build()
             )
             .build();
     }
 
-    private AwsCredentialsProvider getAWSCredentialsProvider() {
+    private AwsCredentialsProvider getAWSCredentialsProvider(String accessKey, String secretKey) {
         AwsBasicCredentials credentials = null;
 
-        if (
-            configuration.getAccessKey() != null &&
-            !configuration.getAccessKey().isEmpty() &&
-            configuration.getSecretKey() != null &&
-            !configuration.getSecretKey().isEmpty()
-        ) {
-            credentials = AwsBasicCredentials.create(configuration.getAccessKey(), configuration.getSecretKey());
+        if (accessKey != null && !accessKey.isEmpty() && secretKey != null && !secretKey.isEmpty()) {
+            credentials = AwsBasicCredentials.create(accessKey, secretKey);
         }
 
         if (credentials != null) {
@@ -291,7 +298,7 @@ public class AwsLambdaPolicyV3 {
     }
 
     private void invokeLambda(ExecutionContext context, Consumer<InvokeResponse> onSuccess, Consumer<PolicyResult> onError) {
-        invokeLambda(context.getTemplateEngine())
+        invokeLambda(Single.just(configuration))
             .whenCompleteAsync((InvokeResponse result, Throwable throwable) -> {
                 // Lambda will return an HTTP status code will be in the 200 range for successful
                 // request, even if an error occurred in the Lambda function itself. Here, we check

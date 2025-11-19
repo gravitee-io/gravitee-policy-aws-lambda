@@ -15,7 +15,9 @@
  */
 package io.gravitee.policy.aws.lambda;
 
+import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import java.net.URI;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -27,12 +29,15 @@ import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
  * and configure the endpoint using the configuration credentials and region. Using it, it'll try to call a real AWS Lambda endpoint
  * which will return us a forbidden exception.
  */
+@Slf4j
 public class AwsLambdaTestPolicy extends AwsLambdaPolicy {
 
+    private final AwsLambdaTestPolicyConfiguration configuration;
     public static final String AWS_LAMBDA_TEST_POLICY = "aws-lambda-test-policy";
 
     public AwsLambdaTestPolicy(AwsLambdaTestPolicyConfiguration configuration) {
         super(configuration);
+        this.configuration = configuration;
     }
 
     @Override
@@ -41,14 +46,14 @@ public class AwsLambdaTestPolicy extends AwsLambdaPolicy {
     }
 
     @Override
-    protected LambdaAsyncClient initLambdaClient() {
+    protected LambdaAsyncClient initLambdaClient(AwsLambdaPolicyConfiguration config) {
+        log.debug("Initializing AWS Lambda Async Client {} {}", config.getAccessKey(), config.getSecretKey());
+
         return LambdaAsyncClient
             .builder()
-            .credentialsProvider(
-                StaticCredentialsProvider.create(AwsBasicCredentials.create(configuration.getAccessKey(), configuration.getSecretKey()))
-            )
-            .endpointOverride(URI.create(((AwsLambdaTestPolicyConfiguration) this.configuration).getEndpoint()))
-            .region(Region.of(this.configuration.getRegion()))
+            .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(config.getAccessKey(), config.getSecretKey())))
+            .endpointOverride(URI.create((this.configuration.getEndpoint())))
+            .region(Region.of(config.getRegion()))
             .build();
     }
 }
