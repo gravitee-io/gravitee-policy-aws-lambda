@@ -31,6 +31,7 @@ import io.gravitee.gateway.reactive.api.policy.http.HttpPolicy;
 import io.gravitee.gateway.reactor.ReactableApi;
 import io.gravitee.policy.aws.lambda.configuration.AwsLambdaError;
 import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
+import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfigurationEvaluator;
 import io.gravitee.policy.aws.lambda.el.LambdaResponse;
 import io.gravitee.policy.aws.lambda.invokers.LambdaInvoker;
 import io.reactivex.rxjava3.core.Completable;
@@ -48,8 +49,11 @@ import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 @Slf4j
 public class AwsLambdaPolicy extends AwsLambdaPolicyV3 implements HttpPolicy {
 
+    private final AwsLambdaPolicyConfigurationEvaluator evaluator;
+
     public AwsLambdaPolicy(AwsLambdaPolicyConfiguration configuration) {
         super(configuration);
+        this.evaluator = new AwsLambdaPolicyConfigurationEvaluator(configuration);
     }
 
     @Override
@@ -98,23 +102,26 @@ public class AwsLambdaPolicy extends AwsLambdaPolicyV3 implements HttpPolicy {
 
     private <T extends HttpBaseExecutionContext> Single<InvokeResponse> invokeAndHandleLambda(T ctx) {
         return Single
-            .fromFuture(invokeLambda(ctx.getTemplateEngine()))
+            .fromFuture(invokeLambda(this.evaluator.eval(ctx)))
             .subscribeOn(Schedulers.io())
             .flatMap(invokeResponse -> {
                 log.debug("AWS Lambda function has been invoked successfully");
+
                 String functionError = invokeResponse.functionError();
+
                 if (functionError != null && List.of("Handled", "Unhandled").contains(functionError)) {
                     return processError(ctx, null, AwsLambdaError.AWS_LAMBDA_INVALID_RESPONSE);
                 } else if (invokeResponse.statusCode() >= 200 && invokeResponse.statusCode() < 300) {
                     return processSuccess(ctx, invokeResponse);
                 }
+
                 return processError(ctx, null, AWS_LAMBDA_INVALID_STATUS_CODE);
             })
             .onErrorResumeNext(throwable -> processError(ctx, throwable, AwsLambdaError.AWS_LAMBDA_INVALID_RESPONSE));
     }
 
     private <T extends HttpBaseExecutionContext> Single<InvokeResponse> processError(T ctx, Throwable throwable, AwsLambdaError error) {
-        log.debug("An error occurs while invoking lambda function", throwable);
+        log.error("An error occurs while invoking lambda function", throwable);
 
         ExecutionFailure failure = new ExecutionFailure(error.getStatusCode())
             .key(error.name())

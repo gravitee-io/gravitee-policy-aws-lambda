@@ -33,7 +33,9 @@ public class AwsLambdaTestPolicyConfiguration extends AwsLambdaPolicyConfigurati
 
     private String region = "us-east-1";
 
-    private String accessKey, secretKey;
+    private String accessKey;
+
+    private String secretKey;
 
     private String function;
 

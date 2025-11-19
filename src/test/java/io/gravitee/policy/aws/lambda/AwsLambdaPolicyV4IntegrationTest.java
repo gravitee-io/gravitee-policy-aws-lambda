@@ -42,6 +42,7 @@ import org.junit.jupiter.params.provider.Arguments;
         "/apis/v4/aws-lambda-proxy-response.json",
         "/apis/v4/aws-lambda-message-request.json",
         "/apis/v4/aws-lambda-message-response.json",
+        "/apis/v4/aws-lambda-secret-support.json",
     }
 )
 public class AwsLambdaPolicyV4IntegrationTest extends AwsLambdaPolicyIntegrationTest {
@@ -86,12 +87,17 @@ public class AwsLambdaPolicyV4IntegrationTest extends AwsLambdaPolicyIntegration
             Arguments.of("/proxy-request", 0),
             Arguments.of("/proxy-response", 1),
             Arguments.of("/message-request", 0),
-            Arguments.of("/message-response", 0)
+            Arguments.of("/message-response", 0),
+            Arguments.of("/secret-support", 0)
         );
     }
 
     @Override
     public Stream<Arguments> providePathAndResponse() {
-        return Stream.of(Arguments.of("/proxy-request", "response from lambda"), Arguments.of("/proxy-response", "response from lambda"));
+        return Stream.of(
+            Arguments.of("/proxy-request", "response from lambda"),
+            Arguments.of("/proxy-response", "response from lambda"),
+            Arguments.of("/secret-support", "response from lambda")
+        );
     }
 }

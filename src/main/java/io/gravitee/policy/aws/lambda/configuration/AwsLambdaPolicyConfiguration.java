@@ -15,7 +15,10 @@
  */
 package io.gravitee.policy.aws.lambda.configuration;
 
+import io.gravitee.plugin.annotation.ConfigurationEvaluator;
 import io.gravitee.policy.api.PolicyConfiguration;
+import io.gravitee.secrets.api.annotation.Secret;
+import io.gravitee.secrets.api.el.FieldKind;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -29,13 +32,18 @@ import software.amazon.awssdk.services.lambda.model.LogType;
  */
 @Getter
 @Setter
+@ConfigurationEvaluator(attributePrefix = "gravitee.attributes.secret.aws")
 public class AwsLambdaPolicyConfiguration implements PolicyConfiguration {
 
     private PolicyScope scope = PolicyScope.REQUEST;
 
     private String region = "us-east-1";
 
-    private String accessKey, secretKey;
+    @Secret(FieldKind.GENERIC)
+    private String accessKey;
+
+    @Secret(FieldKind.GENERIC)
+    private String secretKey;
 
     private String function;
 
@@ -45,6 +53,7 @@ public class AwsLambdaPolicyConfiguration implements PolicyConfiguration {
 
     private String qualifier;
 
+    @Secret(FieldKind.GENERIC)
     private String roleArn;
 
     private String roleSessionName = "gravitee";

@@ -15,35 +15,37 @@
  */
 package io.gravitee.policy.aws.lambda;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
-import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
-import static com.github.tomakehurst.wiremock.client.WireMock.forbidden;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.ok;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.graviteesource.secretprovider.hcvault.HCVaultSecretProvider;
+import com.graviteesource.secretprovider.hcvault.HCVaultSecretProviderFactory;
+import com.graviteesource.secretprovider.hcvault.config.manager.VaultConfig;
+import com.graviteesource.service.secrets.SecretsService;
 import io.gravitee.apim.gateway.tests.sdk.AbstractPolicyTest;
 import io.gravitee.apim.gateway.tests.sdk.annotations.DeployApi;
 import io.gravitee.apim.gateway.tests.sdk.annotations.GatewayTest;
 import io.gravitee.apim.gateway.tests.sdk.configuration.GatewayConfigurationBuilder;
 import io.gravitee.apim.gateway.tests.sdk.policy.PolicyBuilder;
+import io.gravitee.apim.gateway.tests.sdk.secrets.SecretProviderBuilder;
 import io.gravitee.common.http.HttpStatusCode;
+import io.gravitee.common.service.AbstractService;
 import io.gravitee.definition.model.Api;
 import io.gravitee.definition.model.ExecutionMode;
 import io.gravitee.gateway.reactor.ReactableApi;
+import io.gravitee.node.secrets.plugins.SecretProviderPlugin;
 import io.gravitee.plugin.policy.PolicyPlugin;
-import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
+import io.gravitee.secrets.api.plugin.SecretManagerConfiguration;
+import io.gravitee.secrets.api.plugin.SecretProviderFactory;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.rxjava3.core.http.HttpClient;
 import io.vertx.rxjava3.core.http.HttpClientRequest;
+import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
@@ -51,6 +53,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.vault.VaultContainer;
 
 @GatewayTest
 @DeployApi(
@@ -60,19 +64,28 @@ import org.junit.jupiter.params.provider.MethodSource;
         "/apis/v2/aws-lambda-on-response.json",
         "/apis/v2/aws-lambda-on-response-content.json",
         "/apis/v2/aws-lambda-with-send-to-consumer.json",
+        "/apis/v2/aws-lambda-secret-support.json",
     }
 )
 public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambdaTestPolicy, AwsLambdaTestPolicyConfiguration> {
 
+    private static final String VAULT_TOKEN = UUID.randomUUID().toString();
+
+    @Container
+    protected final VaultContainer vaultContainer = new VaultContainer<>("hashicorp/vault:1.13.3").withVaultToken(VAULT_TOKEN);
+
     protected WireMockServer awsLambdaMock;
 
     public AwsLambdaPolicyIntegrationTest() {
+        vaultContainer.start();
         awsLambdaMock = new WireMockServer(wireMockConfig().dynamicPort());
         awsLambdaMock.start();
     }
 
     @AfterAll
     public void tearDown() {
+        vaultContainer.close();
+
         if (null != awsLambdaMock) {
             awsLambdaMock.stop();
         }
@@ -95,9 +108,72 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
     }
 
     @Override
-    protected void configureGateway(GatewayConfigurationBuilder gatewayConfigurationBuilder) {
-        super.configureGateway(gatewayConfigurationBuilder);
-        gatewayConfigurationBuilder.set("api.jupiterMode.enabled", "true");
+    public void configureSecretProviders(
+        Set<SecretProviderPlugin<? extends SecretProviderFactory<?>, ? extends SecretManagerConfiguration>> secretProviderPlugins
+    ) {
+        secretProviderPlugins.add(
+            SecretProviderBuilder.build(HCVaultSecretProvider.PLUGIN_ID, HCVaultSecretProviderFactory.class, VaultConfig.class)
+        );
+    }
+
+    @Override
+    public void configureServices(Set<Class<? extends AbstractService<?>>> services) {
+        super.configureServices(services);
+        services.add(SecretsService.class);
+    }
+
+    @Override
+    protected void configureGateway(GatewayConfigurationBuilder configurationBuilder) {
+        super.configureGateway(configurationBuilder);
+        configurationBuilder.set("api.jupiterMode.enabled", "true");
+        configureVault(configurationBuilder);
+    }
+
+    private void configureVault(GatewayConfigurationBuilder configurationBuilder) {
+        String token = createToken();
+        setConfiguration(configurationBuilder, token);
+        createKeyValuePairs();
+    }
+
+    private String createToken() {
+        try {
+            return vaultContainer.execInContainer("vault", "token", "create", "-period=10m", "-field", "token").getStdout();
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void createKeyValuePairs() {
+        try {
+            vaultContainer.execInContainer(
+                "vault",
+                "kv",
+                "put",
+                "secret/aws",
+                "accessKey=" + "test_access_key",
+                "secretKey=" + "test_secret_key",
+                "roleArn=" + "test_role_arn"
+            );
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void setConfiguration(GatewayConfigurationBuilder configurationBuilder, String token) {
+        configurationBuilder.setYamlProperty("secrets.vault.enabled", true);
+        configurationBuilder.setYamlProperty("secrets.vault.host", vaultContainer.getHost());
+        configurationBuilder.setYamlProperty("secrets.vault.port", vaultContainer.getMappedPort(8200));
+        configurationBuilder.setYamlProperty("secrets.vault.ssl.enabled", false);
+        configurationBuilder.setYamlProperty("secrets.vault.auth.method", "token");
+        configurationBuilder.setYamlProperty("secrets.vault.auth.config.token", token);
+
+        configurationBuilder.setYamlProperty("api.secrets.providers[0].plugin", "vault");
+        configurationBuilder.setYamlProperty("api.secrets.providers[0].configuration.enabled", true);
+        configurationBuilder.setYamlProperty("api.secrets.providers[0].configuration.host", vaultContainer.getHost());
+        configurationBuilder.setYamlProperty("api.secrets.providers[0].configuration.port", vaultContainer.getMappedPort(8200));
+        configurationBuilder.setYamlProperty("api.secrets.providers[0].configuration.ssl.enabled", "false");
+        configurationBuilder.setYamlProperty("api.secrets.providers[0].configuration.auth.method", "token");
+        configurationBuilder.setYamlProperty("api.secrets.providers[0].configuration.auth.config.token", token);
     }
 
     @Override
@@ -179,7 +255,8 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
             Arguments.of("/on-request", 0),
             Arguments.of("/on-request-content", 0),
             Arguments.of("/on-response", 1),
-            Arguments.of("/on-response-content", 1)
+            Arguments.of("/on-response-content", 1),
+            Arguments.of("/secret-support", 0)
         );
     }
 
@@ -188,7 +265,8 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
             Arguments.of("/on-request", "response from lambda"),
             Arguments.of("/on-response", "response from lambda"),
             Arguments.of("/on-response-content", "response from lambda"),
-            Arguments.of("/send-to-consumer", "noContent")
+            Arguments.of("/send-to-consumer", "noContent"),
+            Arguments.of("/secret-support", "response from lambda")
         );
     }
 }
