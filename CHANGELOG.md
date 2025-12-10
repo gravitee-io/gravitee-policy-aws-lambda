@@ -1,3 +1,10 @@
+# [3.1.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.0.0...3.1.0) (2025-12-10)
+
+
+### Features
+
+* secret support for fields ([4240108](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/42401083c6a3078eeaa38447408fafb97c6203e0))
+
 # [3.0.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/2.0.0...3.0.0) (2025-06-03)
 
 
