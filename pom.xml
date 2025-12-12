@@ -38,7 +38,7 @@
         <gravitee-apim-bom.version>4.8.9</gravitee-apim-bom.version>
         <gravitee-plugin.version>4.10.0</gravitee-plugin.version>
         <gravitee-entrypoint-http-get.version>2.1.0</gravitee-entrypoint-http-get.version>
-        <gravitee-reactor-message.version>7.0.1</gravitee-reactor-message.version>
+        <gravitee-reactor-message.version>9.0.0</gravitee-reactor-message.version>
         <gravitee-secretprovider-hc-vault.version>2.1.0</gravitee-secretprovider-hc-vault.version>
         <gravitee-service-secrets.version>2.0.1</gravitee-service-secrets.version>
         <gravitee-secret-api.version>2.0.0</gravitee-secret-api.version>
