@@ -71,4 +71,6 @@ public class AwsLambdaPolicyConfiguration implements PolicyConfiguration {
     private Integer apiCallAttemptTimeoutMs;
 
     private Integer apiCallTimeoutMs;
+
+    private SslConfiguration ssl;
 }

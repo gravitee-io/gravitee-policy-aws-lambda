@@ -51,6 +51,8 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.http.TlsTrustManagersProvider;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
@@ -259,8 +261,10 @@ public class AwsLambdaPolicyV3 {
         String secretKey = config.getSecretKey();
         String roleArn = config.getRoleArn();
 
+        TlsTrustManagersProvider tlsProvider = AwsLambdaSslHelper.buildTrustManagersProvider(config.getSsl());
+
         if (roleArn != null && !roleArn.isEmpty()) {
-            awsCredentialsProvider = createSTSCredentialsProvider(accessKey, secretKey, roleArn);
+            awsCredentialsProvider = createSTSCredentialsProvider(accessKey, secretKey, roleArn, tlsProvider);
         } else {
             awsCredentialsProvider = getAWSCredentialsProvider(accessKey, secretKey);
         }
@@ -273,8 +277,8 @@ public class AwsLambdaPolicyV3 {
             builder.overrideConfiguration(buildClientOverrideConfiguration(config));
         }
 
-        if (config.getConnectionTimeoutMs() != null || config.getReadTimeoutMs() != null) {
-            builder.httpClientBuilder(buildHttpClient(config));
+        if (config.getConnectionTimeoutMs() != null || config.getReadTimeoutMs() != null || tlsProvider != null) {
+            builder.httpClientBuilder(buildHttpClient(config, tlsProvider));
         }
 
         return builder.build();
@@ -293,7 +297,7 @@ public class AwsLambdaPolicyV3 {
         return configBuilder.build();
     }
 
-    NettyNioAsyncHttpClient.Builder buildHttpClient(AwsLambdaPolicyConfiguration config) {
+    NettyNioAsyncHttpClient.Builder buildHttpClient(AwsLambdaPolicyConfiguration config, TlsTrustManagersProvider tlsProvider) {
         var httpClientBuilder = NettyNioAsyncHttpClient.builder();
 
         if (config.getConnectionTimeoutMs() != null) {
@@ -302,19 +306,30 @@ public class AwsLambdaPolicyV3 {
         if (config.getReadTimeoutMs() != null) {
             httpClientBuilder.readTimeout(Duration.ofMillis(config.getReadTimeoutMs()));
         }
+        if (tlsProvider != null) {
+            httpClientBuilder.tlsTrustManagersProvider(tlsProvider);
+        }
 
         return httpClientBuilder;
     }
 
-    private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider(String accessKey, String secretKey, String roleArn) {
+    private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider(
+        String accessKey,
+        String secretKey,
+        String roleArn,
+        TlsTrustManagersProvider tlsProvider
+    ) {
+        var stsBuilder = StsClient.builder()
+            .credentialsProvider(getAWSCredentialsProvider(accessKey, secretKey))
+            .region(Region.of(configuration.getRegion()));
+
+        if (tlsProvider != null) {
+            stsBuilder.httpClientBuilder(ApacheHttpClient.builder().tlsTrustManagersProvider(tlsProvider));
+        }
+
         return StsAssumeRoleCredentialsProvider.builder()
             .refreshRequest(() -> AssumeRoleRequest.builder().roleArn(roleArn).roleSessionName(configuration.getRoleSessionName()).build())
-            .stsClient(
-                StsClient.builder()
-                    .credentialsProvider(getAWSCredentialsProvider(accessKey, secretKey))
-                    .region(Region.of(configuration.getRegion()))
-                    .build()
-            )
+            .stsClient(stsBuilder.build())
             .build();
     }
 
