@@ -49,6 +49,9 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.http.TlsTrustManagersProvider;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
@@ -257,28 +260,44 @@ public class AwsLambdaPolicyV3 {
         String secretKey = config.getSecretKey();
         String roleArn = config.getRoleArn();
 
+        TlsTrustManagersProvider tlsProvider = AwsLambdaSslHelper.buildTrustManagersProvider(config.getSsl());
+
         if (roleArn != null && !roleArn.isEmpty()) {
-            awsCredentialsProvider = createSTSCredentialsProvider(accessKey, secretKey, roleArn);
+            awsCredentialsProvider = createSTSCredentialsProvider(accessKey, secretKey, roleArn, tlsProvider);
         } else {
             awsCredentialsProvider = getAWSCredentialsProvider(accessKey, secretKey);
         }
 
         String region = config.getRegion();
 
-        return LambdaAsyncClient.builder().credentialsProvider(awsCredentialsProvider).region(Region.of(region)).build();
+        var builder = LambdaAsyncClient.builder().credentialsProvider(awsCredentialsProvider).region(Region.of(region));
+
+        if (tlsProvider != null) {
+            builder.httpClientBuilder(NettyNioAsyncHttpClient.builder().tlsTrustManagersProvider(tlsProvider));
+        }
+
+        return builder.build();
     }
 
-    private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider(String accessKey, String secretKey, String roleArn) {
+    private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider(
+        String accessKey,
+        String secretKey,
+        String roleArn,
+        TlsTrustManagersProvider tlsProvider
+    ) {
+        var stsBuilder = StsClient
+            .builder()
+            .credentialsProvider(getAWSCredentialsProvider(accessKey, secretKey))
+            .region(Region.of(configuration.getRegion()));
+
+        if (tlsProvider != null) {
+            stsBuilder.httpClientBuilder(ApacheHttpClient.builder().tlsTrustManagersProvider(tlsProvider));
+        }
+
         return StsAssumeRoleCredentialsProvider
             .builder()
             .refreshRequest(() -> AssumeRoleRequest.builder().roleArn(roleArn).roleSessionName(configuration.getRoleSessionName()).build())
-            .stsClient(
-                StsClient
-                    .builder()
-                    .credentialsProvider(getAWSCredentialsProvider(accessKey, secretKey))
-                    .region(Region.of(configuration.getRegion()))
-                    .build()
-            )
+            .stsClient(stsBuilder.build())
             .build();
     }
 
