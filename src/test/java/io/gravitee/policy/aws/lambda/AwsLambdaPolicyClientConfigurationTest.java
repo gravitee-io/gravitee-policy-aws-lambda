@@ -107,7 +107,7 @@ class AwsLambdaPolicyClientConfigurationTest {
         config.setConnectionTimeoutMs(5000);
         AwsLambdaPolicyV3 policy = new AwsLambdaTestPolicy(config);
 
-        NettyNioAsyncHttpClient.Builder httpClientBuilder = policy.buildHttpClient(config);
+        NettyNioAsyncHttpClient.Builder httpClientBuilder = policy.buildHttpClient(config, null);
 
         try (var httpClient = httpClientBuilder.build()) {
             assertThat(httpClient).isNotNull();
@@ -120,7 +120,7 @@ class AwsLambdaPolicyClientConfigurationTest {
         config.setReadTimeoutMs(30000);
         AwsLambdaPolicyV3 policy = new AwsLambdaTestPolicy(config);
 
-        NettyNioAsyncHttpClient.Builder httpClientBuilder = policy.buildHttpClient(config);
+        NettyNioAsyncHttpClient.Builder httpClientBuilder = policy.buildHttpClient(config, null);
 
         try (var httpClient = httpClientBuilder.build()) {
             assertThat(httpClient).isNotNull();
@@ -134,7 +134,7 @@ class AwsLambdaPolicyClientConfigurationTest {
         config.setReadTimeoutMs(30000);
         AwsLambdaPolicyV3 policy = new AwsLambdaTestPolicy(config);
 
-        NettyNioAsyncHttpClient.Builder httpClientBuilder = policy.buildHttpClient(config);
+        NettyNioAsyncHttpClient.Builder httpClientBuilder = policy.buildHttpClient(config, null);
 
         try (var httpClient = httpClientBuilder.build()) {
             assertThat(httpClient).isNotNull();
