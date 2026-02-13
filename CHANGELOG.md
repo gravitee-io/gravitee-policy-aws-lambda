@@ -1,3 +1,10 @@
+# [3.2.0-alpha.1](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.1.0...3.2.0-alpha.1) (2026-02-13)
+
+
+### Features
+
+* add SSL/TLS configuration for AWS SDK HTTP clients ([3a71b8a](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/3a71b8a63c614006ca26803b15cce9f18ff2a84a))
+
 # [3.1.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.0.0...3.1.0) (2025-12-10)
 
 
