@@ -63,4 +63,6 @@ public class AwsLambdaPolicyConfiguration implements PolicyConfiguration {
     private List<Variable> variables = new ArrayList<>();
 
     private boolean sendToConsumer;
+
+    private SslConfiguration ssl;
 }

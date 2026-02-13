@@ -108,6 +108,69 @@
                     }
                 }
             }
+        },
+        "ssl": {
+            "type": "object",
+            "title": "SSL / TLS Configuration",
+            "description": "Custom SSL/TLS trust configuration for the AWS SDK HTTP clients. When not configured, the JVM default truststore is used.",
+            "properties": {
+                "trustAll": {
+                    "title": "Trust All Certificates",
+                    "description": "Skip certificate validation entirely. Use only for debugging purposes.",
+                    "type": "boolean",
+                    "default": false
+                },
+                "trustStoreType": {
+                    "title": "Truststore Type",
+                    "description": "Type of the truststore (JKS, PKCS12, or PEM).",
+                    "type": "string",
+                    "enum": ["JKS", "PKCS12", "PEM"]
+                },
+                "trustStorePath": {
+                    "title": "Truststore Path",
+                    "description": "File path to the truststore on the gateway filesystem.",
+                    "type": "string",
+                    "gioConfig": {
+                        "displayIf": {
+                            "$eq": {
+                                "value.ssl.trustStoreType": ["JKS", "PKCS12", "PEM"]
+                            }
+                        }
+                    }
+                },
+                "trustStorePassword": {
+                    "title": "Truststore Password",
+                    "description": "Password for the truststore (not applicable for PEM).",
+                    "type": "string",
+                    "gioConfig": {
+                        "displayIf": {
+                            "$eq": {
+                                "value.ssl.trustStoreType": ["JKS", "PKCS12"]
+                            }
+                        }
+                    }
+                },
+                "trustStoreContent": {
+                    "title": "Truststore PEM Content",
+                    "description": "Inline PEM-encoded certificate(s). Alternative to trustStorePath when using PEM type.",
+                    "type": "string",
+                    "x-schema-form": {
+                        "type": "codemirror",
+                        "codemirrorOptions": {
+                            "placeholder": "Paste PEM certificate(s) here",
+                            "lineWrapping": true,
+                            "lineNumbers": true
+                        }
+                    },
+                    "gioConfig": {
+                        "displayIf": {
+                            "$eq": {
+                                "value.ssl.trustStoreType": ["PEM"]
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "required": ["scope", "region", "function", "invocationType", "logType"]
