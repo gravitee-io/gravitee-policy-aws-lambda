@@ -180,16 +180,14 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
     public void configureApi(ReactableApi<?> api, Class<?> apiDefinitionClass) {
         if (apiDefinitionClass.isAssignableFrom(Api.class)) {
             ((Api) api.getDefinition()).setExecutionMode(ExecutionMode.V3);
-            ((Api) api.getDefinition()).getFlows()
-                .forEach(flow -> {
-                    Stream
-                        .concat(flow.getPre().stream(), flow.getPost().stream())
-                        .filter(policy -> AwsLambdaTestPolicy.AWS_LAMBDA_TEST_POLICY.equals(policy.getPolicy()))
-                        .findFirst()
-                        .ifPresent(policy -> {
-                            policy.setConfiguration(policy.getConfiguration().replace("http://localhost:9999", awsLambdaMock.baseUrl()));
-                        });
-                });
+            ((Api) api.getDefinition()).getFlows().forEach(flow -> {
+                Stream.concat(flow.getPre().stream(), flow.getPost().stream())
+                    .filter(policy -> AwsLambdaTestPolicy.AWS_LAMBDA_TEST_POLICY.equals(policy.getPolicy()))
+                    .findFirst()
+                    .ifPresent(policy -> {
+                        policy.setConfiguration(policy.getConfiguration().replace("http://localhost:9999", awsLambdaMock.baseUrl()));
+                    });
+            });
         }
     }
 

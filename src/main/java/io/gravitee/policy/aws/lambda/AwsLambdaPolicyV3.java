@@ -237,8 +237,7 @@ public class AwsLambdaPolicyV3 {
     }
 
     private static InvokeRequest.Builder buildRequest(AwsLambdaPolicyConfiguration config) {
-        InvokeRequest.Builder awsRequest = InvokeRequest
-            .builder()
+        InvokeRequest.Builder awsRequest = InvokeRequest.builder()
             .functionName(config.getFunction())
             .invocationType(config.getInvocationType())
             .qualifier(config.getQualifier())
@@ -269,12 +268,10 @@ public class AwsLambdaPolicyV3 {
     }
 
     private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider(String accessKey, String secretKey, String roleArn) {
-        return StsAssumeRoleCredentialsProvider
-            .builder()
+        return StsAssumeRoleCredentialsProvider.builder()
             .refreshRequest(() -> AssumeRoleRequest.builder().roleArn(roleArn).roleSessionName(configuration.getRoleSessionName()).build())
             .stsClient(
-                StsClient
-                    .builder()
+                StsClient.builder()
                     .credentialsProvider(getAWSCredentialsProvider(accessKey, secretKey))
                     .region(Region.of(configuration.getRegion()))
                     .build()
@@ -309,8 +306,7 @@ public class AwsLambdaPolicyV3 {
                             AWS_LAMBDA_INVALID_RESPONSE.name(),
                             AWS_LAMBDA_INVALID_RESPONSE.getStatusCode(),
                             "An error occurs while invoking lambda function.",
-                            Maps
-                                .<String, Object>builder()
+                            Maps.<String, Object>builder()
                                 .put("function", configuration.getFunction())
                                 .put("region", configuration.getRegion())
                                 .put("error", result.functionError())
@@ -345,8 +341,7 @@ public class AwsLambdaPolicyV3 {
                             AWS_LAMBDA_INVALID_STATUS_CODE.name(),
                             AWS_LAMBDA_INVALID_STATUS_CODE.getStatusCode(),
                             "Invalid status code from lambda function response.",
-                            Maps
-                                .<String, Object>builder()
+                            Maps.<String, Object>builder()
                                 .put("function", configuration.getFunction())
                                 .put("region", configuration.getRegion())
                                 .put("error", result.functionError())
@@ -362,8 +357,7 @@ public class AwsLambdaPolicyV3 {
                         AWS_LAMBDA_INVALID_RESPONSE.name(),
                         AWS_LAMBDA_INVALID_RESPONSE.getStatusCode(),
                         "An error occurs while invoking lambda function. Details: [" + throwable.getMessage() + "]",
-                        Maps
-                            .<String, Object>builder()
+                        Maps.<String, Object>builder()
                             .put("function", configuration.getFunction())
                             .put("region", configuration.getRegion())
                             .build()
