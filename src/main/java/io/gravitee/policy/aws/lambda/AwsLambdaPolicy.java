@@ -245,8 +245,7 @@ public class AwsLambdaPolicy {
                             AWS_LAMBDA_INVALID_RESPONSE,
                             HttpStatusCode.INTERNAL_SERVER_ERROR_500,
                             "An error occurs while invoking lambda function. Details: [" + ex.getMessage() + "]",
-                            Maps
-                                .<String, Object>builder()
+                            Maps.<String, Object>builder()
                                 .put("function", configuration.getFunction())
                                 .put("region", configuration.getRegion())
                                 .put("error", ex.getMessage())
@@ -266,8 +265,7 @@ public class AwsLambdaPolicy {
                                 AWS_LAMBDA_INVALID_RESPONSE,
                                 HttpStatusCode.INTERNAL_SERVER_ERROR_500,
                                 "An error occurs while invoking lambda function.",
-                                Maps
-                                    .<String, Object>builder()
+                                Maps.<String, Object>builder()
                                     .put("function", configuration.getFunction())
                                     .put("region", configuration.getRegion())
                                     .put("error", result.getFunctionError())
@@ -304,8 +302,7 @@ public class AwsLambdaPolicy {
                                 AWS_LAMBDA_INVALID_STATUS_CODE,
                                 HttpStatusCode.BAD_REQUEST_400,
                                 "Invalid status code from lambda function response.",
-                                Maps
-                                    .<String, Object>builder()
+                                Maps.<String, Object>builder()
                                     .put("function", configuration.getFunction())
                                     .put("region", configuration.getRegion())
                                     .put("statusCode", result.getStatusCode())
@@ -327,8 +324,7 @@ public class AwsLambdaPolicy {
             awsCredentialsProvider = getAWSCredentialsProvider();
         }
 
-        AWSLambdaAsyncClientBuilder builder = AWSLambdaAsyncClientBuilder
-            .standard()
+        AWSLambdaAsyncClientBuilder builder = AWSLambdaAsyncClientBuilder.standard()
             .withCredentials(awsCredentialsProvider)
             .withRegion(configuration.getRegion());
 
@@ -367,8 +363,7 @@ public class AwsLambdaPolicy {
     private AWSCredentialsProvider createSTSCredentialsProvider() {
         return new STSAssumeRoleSessionCredentialsProvider.Builder(configuration.getRoleArn(), configuration.getRoleSessionName())
             .withStsClient(
-                AWSSecurityTokenServiceClientBuilder
-                    .standard()
+                AWSSecurityTokenServiceClientBuilder.standard()
                     .withCredentials(getAWSCredentialsProvider())
                     .withRegion(configuration.getRegion())
                     .build()

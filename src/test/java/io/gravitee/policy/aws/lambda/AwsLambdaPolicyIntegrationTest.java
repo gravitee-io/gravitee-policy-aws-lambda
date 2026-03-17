@@ -96,26 +96,25 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
     public void configureApi(ReactableApi<?> api, Class<?> apiDefinitionClass) {
         if (apiDefinitionClass.isAssignableFrom(Api.class)) {
             ((Api) api.getDefinition()).setExecutionMode(ExecutionMode.V3);
-            ((Api) api.getDefinition()).getFlows()
-                .forEach(flow -> {
-                    flow
-                        .getPre()
-                        .stream()
-                        .filter(policy -> "aws-lambda-test-policy".equals(policy.getPolicy()))
-                        .findFirst()
-                        .ifPresent(policy -> {
-                            policy.setConfiguration(policy.getConfiguration().replace("http://localhost:9999", awsLambdaMock.baseUrl()));
-                        });
+            ((Api) api.getDefinition()).getFlows().forEach(flow -> {
+                flow
+                    .getPre()
+                    .stream()
+                    .filter(policy -> "aws-lambda-test-policy".equals(policy.getPolicy()))
+                    .findFirst()
+                    .ifPresent(policy -> {
+                        policy.setConfiguration(policy.getConfiguration().replace("http://localhost:9999", awsLambdaMock.baseUrl()));
+                    });
 
-                    flow
-                        .getPost()
-                        .stream()
-                        .filter(policy -> "aws-lambda-test-policy".equals(policy.getPolicy()))
-                        .findFirst()
-                        .ifPresent(policy -> {
-                            policy.setConfiguration(policy.getConfiguration().replace("http://localhost:9999", awsLambdaMock.baseUrl()));
-                        });
-                });
+                flow
+                    .getPost()
+                    .stream()
+                    .filter(policy -> "aws-lambda-test-policy".equals(policy.getPolicy()))
+                    .findFirst()
+                    .ifPresent(policy -> {
+                        policy.setConfiguration(policy.getConfiguration().replace("http://localhost:9999", awsLambdaMock.baseUrl()));
+                    });
+            });
         }
     }
 
