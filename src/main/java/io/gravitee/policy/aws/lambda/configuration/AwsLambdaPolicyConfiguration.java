@@ -51,6 +51,14 @@ public class AwsLambdaPolicyConfiguration implements PolicyConfiguration {
 
     private boolean sendToConsumer;
 
+    private Integer connectionTimeoutMs;
+
+    private Integer socketTimeoutMs;
+
+    private Integer requestTimeoutMs;
+
+    private Integer clientExecutionTimeoutMs;
+
     public PolicyScope getScope() {
         return scope;
     }
@@ -153,5 +161,37 @@ public class AwsLambdaPolicyConfiguration implements PolicyConfiguration {
 
     public void setLogType(LogType logType) {
         this.logType = logType;
+    }
+
+    public Integer getConnectionTimeoutMs() {
+        return connectionTimeoutMs;
+    }
+
+    public void setConnectionTimeoutMs(Integer connectionTimeoutMs) {
+        this.connectionTimeoutMs = connectionTimeoutMs;
+    }
+
+    public Integer getSocketTimeoutMs() {
+        return socketTimeoutMs;
+    }
+
+    public void setSocketTimeoutMs(Integer socketTimeoutMs) {
+        this.socketTimeoutMs = socketTimeoutMs;
+    }
+
+    public Integer getRequestTimeoutMs() {
+        return requestTimeoutMs;
+    }
+
+    public void setRequestTimeoutMs(Integer requestTimeoutMs) {
+        this.requestTimeoutMs = requestTimeoutMs;
+    }
+
+    public Integer getClientExecutionTimeoutMs() {
+        return clientExecutionTimeoutMs;
+    }
+
+    public void setClientExecutionTimeoutMs(Integer clientExecutionTimeoutMs) {
+        this.clientExecutionTimeoutMs = clientExecutionTimeoutMs;
     }
 }

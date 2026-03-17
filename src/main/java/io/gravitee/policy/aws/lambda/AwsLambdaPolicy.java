@@ -15,6 +15,7 @@
  */
 package io.gravitee.policy.aws.lambda;
 
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.*;
 import com.amazonaws.handlers.AsyncHandler;
 import com.amazonaws.services.lambda.AWSLambdaAsync;
@@ -326,7 +327,41 @@ public class AwsLambdaPolicy {
             awsCredentialsProvider = getAWSCredentialsProvider();
         }
 
-        return AWSLambdaAsyncClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(configuration.getRegion()).build();
+        AWSLambdaAsyncClientBuilder builder = AWSLambdaAsyncClientBuilder
+            .standard()
+            .withCredentials(awsCredentialsProvider)
+            .withRegion(configuration.getRegion());
+
+        ClientConfiguration clientConfiguration = buildClientConfiguration();
+        if (clientConfiguration != null) {
+            builder.withClientConfiguration(clientConfiguration);
+        }
+
+        return builder.build();
+    }
+
+    ClientConfiguration buildClientConfiguration() {
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        boolean hasCustomConfig = false;
+
+        if (configuration.getConnectionTimeoutMs() != null) {
+            clientConfiguration.setConnectionTimeout(configuration.getConnectionTimeoutMs());
+            hasCustomConfig = true;
+        }
+        if (configuration.getSocketTimeoutMs() != null) {
+            clientConfiguration.setSocketTimeout(configuration.getSocketTimeoutMs());
+            hasCustomConfig = true;
+        }
+        if (configuration.getRequestTimeoutMs() != null) {
+            clientConfiguration.setRequestTimeout(configuration.getRequestTimeoutMs());
+            hasCustomConfig = true;
+        }
+        if (configuration.getClientExecutionTimeoutMs() != null) {
+            clientConfiguration.setClientExecutionTimeout(configuration.getClientExecutionTimeoutMs());
+            hasCustomConfig = true;
+        }
+
+        return hasCustomConfig ? clientConfiguration : null;
     }
 
     private AWSCredentialsProvider createSTSCredentialsProvider() {
