@@ -41,6 +41,7 @@ import io.gravitee.policy.aws.lambda.invokers.LambdaInvokerV3;
 import io.reactivex.rxjava3.core.Single;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +50,8 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
@@ -264,7 +267,43 @@ public class AwsLambdaPolicyV3 {
 
         String region = config.getRegion();
 
-        return LambdaAsyncClient.builder().credentialsProvider(awsCredentialsProvider).region(Region.of(region)).build();
+        var builder = LambdaAsyncClient.builder().credentialsProvider(awsCredentialsProvider).region(Region.of(region));
+
+        if (config.getApiCallTimeoutMs() != null || config.getApiCallAttemptTimeoutMs() != null) {
+            builder.overrideConfiguration(buildClientOverrideConfiguration(config));
+        }
+
+        if (config.getConnectionTimeoutMs() != null || config.getReadTimeoutMs() != null) {
+            builder.httpClientBuilder(buildHttpClient(config));
+        }
+
+        return builder.build();
+    }
+
+    ClientOverrideConfiguration buildClientOverrideConfiguration(AwsLambdaPolicyConfiguration config) {
+        var configBuilder = ClientOverrideConfiguration.builder();
+
+        if (config.getApiCallTimeoutMs() != null) {
+            configBuilder.apiCallTimeout(Duration.ofMillis(config.getApiCallTimeoutMs()));
+        }
+        if (config.getApiCallAttemptTimeoutMs() != null) {
+            configBuilder.apiCallAttemptTimeout(Duration.ofMillis(config.getApiCallAttemptTimeoutMs()));
+        }
+
+        return configBuilder.build();
+    }
+
+    NettyNioAsyncHttpClient.Builder buildHttpClient(AwsLambdaPolicyConfiguration config) {
+        var httpClientBuilder = NettyNioAsyncHttpClient.builder();
+
+        if (config.getConnectionTimeoutMs() != null) {
+            httpClientBuilder.connectionTimeout(Duration.ofMillis(config.getConnectionTimeoutMs()));
+        }
+        if (config.getReadTimeoutMs() != null) {
+            httpClientBuilder.readTimeout(Duration.ofMillis(config.getReadTimeoutMs()));
+        }
+
+        return httpClientBuilder;
     }
 
     private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider(String accessKey, String secretKey, String roleArn) {
