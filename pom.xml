@@ -31,7 +31,7 @@
     <parent>
         <groupId>io.gravitee</groupId>
         <artifactId>gravitee-parent</artifactId>
-        <version>23.4.1</version>
+        <version>23.5.0</version>
     </parent>
 
     <properties>
@@ -46,7 +46,6 @@
         <aws-java-sdk.version>2.31.26</aws-java-sdk.version>
         <hibernate-validator.version>8.0.3.Final</hibernate-validator.version>
 
-        <maven-plugin-assembly.version>3.8.0</maven-plugin-assembly.version>
         <maven-plugin-properties.version>1.2.1</maven-plugin-properties.version>
 
         <!-- Property used by the publication job in CI-->
@@ -252,7 +251,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven-plugin-assembly.version}</version>
                 <configuration>
                     <appendAssemblyId>false</appendAssemblyId>
                     <descriptors>

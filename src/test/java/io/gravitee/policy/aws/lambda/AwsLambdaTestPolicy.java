@@ -49,8 +49,7 @@ public class AwsLambdaTestPolicy extends AwsLambdaPolicy {
     protected LambdaAsyncClient initLambdaClient(AwsLambdaPolicyConfiguration config) {
         log.debug("Initializing AWS Lambda Async Client {} {}", config.getAccessKey(), config.getSecretKey());
 
-        return LambdaAsyncClient
-            .builder()
+        return LambdaAsyncClient.builder()
             .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(config.getAccessKey(), config.getSecretKey())))
             .endpointOverride(URI.create((this.configuration.getEndpoint())))
             .region(Region.of(config.getRegion()))
