@@ -59,46 +59,43 @@ public class AwsLambdaPolicy extends AwsLambdaPolicyV3 implements HttpPolicy {
 
     @Override
     public Completable onRequest(HttpPlainExecutionContext ctx) {
-        return invokeAndHandleLambda(ctx)
-            .flatMapCompletable(invokeResponse -> {
-                ReactableApi<?> reactableApi = ctx.getComponent(ReactableApi.class);
-                var definition = reactableApi.getDefinition();
-                var skipInvoker = definition instanceof Api && ((Api) definition).getType() == ApiType.MESSAGE;
+        return invokeAndHandleLambda(ctx).flatMapCompletable(invokeResponse -> {
+            ReactableApi<?> reactableApi = ctx.getComponent(ReactableApi.class);
+            var definition = reactableApi.getDefinition();
+            var skipInvoker = definition instanceof Api && ((Api) definition).getType() == ApiType.MESSAGE;
 
-                if (configuration.isSendToConsumer() && !skipInvoker) {
-                    // If sendToConsumer is true, use the Lambda invoker instead of the default HTTP invoker.
-                    // This bypasses the backend and directly returns the Lambda result.
-                    ctx.setInternalAttribute(
-                        InternalContextAttributes.ATTR_INTERNAL_INVOKER,
-                        new LambdaInvoker(
-                            configuration,
-                            ctx.getInternalAttribute(InternalContextAttributes.ATTR_INTERNAL_INVOKER),
-                            invokeResponse
-                        )
-                    );
-                }
+            if (configuration.isSendToConsumer() && !skipInvoker) {
+                // If sendToConsumer is true, use the Lambda invoker instead of the default HTTP invoker.
+                // This bypasses the backend and directly returns the Lambda result.
+                ctx.setInternalAttribute(
+                    InternalContextAttributes.ATTR_INTERNAL_INVOKER,
+                    new LambdaInvoker(
+                        configuration,
+                        ctx.getInternalAttribute(InternalContextAttributes.ATTR_INTERNAL_INVOKER),
+                        invokeResponse
+                    )
+                );
+            }
 
-                return Completable.complete();
-            });
+            return Completable.complete();
+        });
     }
 
     @Override
     public Completable onResponse(HttpPlainExecutionContext ctx) {
-        return invokeAndHandleLambda(ctx)
-            .flatMapCompletable(invokeResponse -> {
-                if (configuration.isSendToConsumer()) {
-                    Buffer buffer = Buffer.buffer(invokeResponse.payload().asByteArray());
-                    ctx.response().headers().remove(CONTENT_LENGTH);
-                    ctx.response().status(invokeResponse.statusCode());
-                    return ctx.response().onChunks(chunks -> chunks.ignoreElements().andThen(Flowable.just(buffer)));
-                }
-                return Completable.complete();
-            });
+        return invokeAndHandleLambda(ctx).flatMapCompletable(invokeResponse -> {
+            if (configuration.isSendToConsumer()) {
+                Buffer buffer = Buffer.buffer(invokeResponse.payload().asByteArray());
+                ctx.response().headers().remove(CONTENT_LENGTH);
+                ctx.response().status(invokeResponse.statusCode());
+                return ctx.response().onChunks(chunks -> chunks.ignoreElements().andThen(Flowable.just(buffer)));
+            }
+            return Completable.complete();
+        });
     }
 
     private <T extends HttpBaseExecutionContext> Single<InvokeResponse> invokeAndHandleLambda(T ctx) {
-        return Single
-            .fromFuture(invokeLambda(ctx.getTemplateEngine()))
+        return Single.fromFuture(invokeLambda(ctx.getTemplateEngine()))
             .subscribeOn(Schedulers.io())
             .flatMap(invokeResponse -> {
                 log.debug("AWS Lambda function has been invoked successfully");

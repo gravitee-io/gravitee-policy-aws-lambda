@@ -224,26 +224,23 @@ public class AwsLambdaPolicyV3 {
     }
 
     protected CompletableFuture<InvokeResponse> invokeLambda(TemplateEngine templateEngine) {
-        return CompletableFuture
-            .supplyAsync(() -> {
-                InvokeRequest.Builder awsRequest = InvokeRequest
-                    .builder()
-                    .functionName(configuration.getFunction())
-                    .invocationType(configuration.getInvocationType())
-                    .qualifier(configuration.getQualifier())
-                    .logType(configuration.getLogType());
+        return CompletableFuture.supplyAsync(() -> {
+            InvokeRequest.Builder awsRequest = InvokeRequest.builder()
+                .functionName(configuration.getFunction())
+                .invocationType(configuration.getInvocationType())
+                .qualifier(configuration.getQualifier())
+                .logType(configuration.getLogType());
 
-                if (configuration.getPayload() != null && !configuration.getPayload().isEmpty()) {
-                    String payload = templateEngine.evalNow(configuration.getPayload(), String.class);
-                    awsRequest.payload(SdkBytes.fromUtf8String(payload));
-                }
+            if (configuration.getPayload() != null && !configuration.getPayload().isEmpty()) {
+                String payload = templateEngine.evalNow(configuration.getPayload(), String.class);
+                awsRequest.payload(SdkBytes.fromUtf8String(payload));
+            }
 
-                return awsRequest;
-            })
-            .thenCompose(awsRequest -> {
-                // invoke the lambda function and inspect the result...
-                return lambdaClient.invoke(awsRequest.build());
-            });
+            return awsRequest;
+        }).thenCompose(awsRequest -> {
+            // invoke the lambda function and inspect the result...
+            return lambdaClient.invoke(awsRequest.build());
+        });
     }
 
     protected LambdaAsyncClient initLambdaClient() {
@@ -259,8 +256,7 @@ public class AwsLambdaPolicyV3 {
     }
 
     private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider() {
-        return StsAssumeRoleCredentialsProvider
-            .builder()
+        return StsAssumeRoleCredentialsProvider.builder()
             .refreshRequest(() ->
                 AssumeRoleRequest.builder().roleArn(configuration.getRoleArn()).roleSessionName(configuration.getRoleSessionName()).build()
             )
@@ -302,8 +298,7 @@ public class AwsLambdaPolicyV3 {
                             AWS_LAMBDA_INVALID_RESPONSE.name(),
                             AWS_LAMBDA_INVALID_RESPONSE.getStatusCode(),
                             "An error occurs while invoking lambda function.",
-                            Maps
-                                .<String, Object>builder()
+                            Maps.<String, Object>builder()
                                 .put("function", configuration.getFunction())
                                 .put("region", configuration.getRegion())
                                 .put("error", result.functionError())
@@ -338,8 +333,7 @@ public class AwsLambdaPolicyV3 {
                             AWS_LAMBDA_INVALID_STATUS_CODE.name(),
                             AWS_LAMBDA_INVALID_STATUS_CODE.getStatusCode(),
                             "Invalid status code from lambda function response.",
-                            Maps
-                                .<String, Object>builder()
+                            Maps.<String, Object>builder()
                                 .put("function", configuration.getFunction())
                                 .put("region", configuration.getRegion())
                                 .put("error", result.functionError())
@@ -355,8 +349,7 @@ public class AwsLambdaPolicyV3 {
                         AWS_LAMBDA_INVALID_RESPONSE.name(),
                         AWS_LAMBDA_INVALID_RESPONSE.getStatusCode(),
                         "An error occurs while invoking lambda function. Details: [" + throwable.getMessage() + "]",
-                        Maps
-                            .<String, Object>builder()
+                        Maps.<String, Object>builder()
                             .put("function", configuration.getFunction())
                             .put("region", configuration.getRegion())
                             .build()

@@ -42,8 +42,7 @@ public class AwsLambdaTestPolicy extends AwsLambdaPolicy {
 
     @Override
     protected LambdaAsyncClient initLambdaClient() {
-        return LambdaAsyncClient
-            .builder()
+        return LambdaAsyncClient.builder()
             .credentialsProvider(
                 StaticCredentialsProvider.create(AwsBasicCredentials.create(configuration.getAccessKey(), configuration.getSecretKey()))
             )
