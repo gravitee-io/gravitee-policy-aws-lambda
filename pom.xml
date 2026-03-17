@@ -31,16 +31,15 @@
     <parent>
         <groupId>io.gravitee</groupId>
         <artifactId>gravitee-parent</artifactId>
-        <version>23.0.2</version>
+        <version>23.5.0</version>
     </parent>
 
     <properties>
-        <gravitee-apim-bom.version>4.7.0-alpha.1</gravitee-apim-bom.version>
+        <gravitee-apim-bom.version>4.7.0</gravitee-apim-bom.version>
         <gravitee-entrypoint-http-get.version>2.1.0</gravitee-entrypoint-http-get.version>
         <gravitee-reactor-message.version>6.0.0</gravitee-reactor-message.version>
         <aws-java-sdk.version>2.30.26</aws-java-sdk.version>
 
-        <maven-plugin-assembly.version>3.5.0</maven-plugin-assembly.version>
         <maven-plugin-properties.version>1.1.0</maven-plugin-properties.version>
 
         <!-- Property used by the publication job in CI-->
@@ -201,7 +200,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven-plugin-assembly.version}</version>
                 <configuration>
                     <appendAssemblyId>false</appendAssemblyId>
                     <descriptors>

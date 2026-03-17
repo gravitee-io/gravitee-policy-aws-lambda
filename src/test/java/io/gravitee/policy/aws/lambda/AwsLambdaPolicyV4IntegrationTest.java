@@ -58,8 +58,7 @@ public class AwsLambdaPolicyV4IntegrationTest extends AwsLambdaPolicyIntegration
             definition
                 .getFlows()
                 .forEach(flow ->
-                    Stream
-                        .concat(flow.getRequest().stream(), flow.getResponse().stream())
+                    Stream.concat(flow.getRequest().stream(), flow.getResponse().stream())
                         .filter(step -> AwsLambdaTestPolicy.AWS_LAMBDA_TEST_POLICY.equals(step.getPolicy()))
                         .forEach(step ->
                             step.setConfiguration(step.getConfiguration().replace("http://localhost:9999", awsLambdaMock.baseUrl()))
