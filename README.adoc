@@ -115,6 +115,30 @@ DryRun – Validate parameter values and verify that the user or role has permis
 ^.^|string
 ^.^|gravitee
 
+.^|connectionTimeoutMs
+^.^|
+|The amount of time to wait (in milliseconds) when initially establishing a connection before giving up. If not set, the default value of the AWS SDK is used.
+^.^|integer
+^.^|10000 (AWS SDK default)
+
+.^|socketTimeoutMs
+^.^|
+|The amount of time to wait (in milliseconds) for data to be transferred over an established connection before the connection times out. If not set, the default value of the AWS SDK is used.
+^.^|integer
+^.^|50000 (AWS SDK default)
+
+.^|requestTimeoutMs
+^.^|
+|The amount of time to wait (in milliseconds) for a single HTTP request to complete before giving up. If not set, the default value of the AWS SDK is used.
+^.^|integer
+^.^|0 - disabled (AWS SDK default)
+
+.^|clientExecutionTimeoutMs
+^.^|
+|The total amount of time (in milliseconds) for the client to complete the execution of an API call, including retries and backoff. If not set, the default value of the AWS SDK is used.
+^.^|integer
+^.^|0 - disabled (AWS SDK default)
+
 |===
 
 == Examples

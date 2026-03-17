@@ -100,6 +100,30 @@
             "description": "Check this option if you want to send the response of the lambda to the initial consumer without going to the final upstream (endpoints) selected by the gateway.",
             "type": "boolean",
             "default": false
+        },
+        "connectionTimeoutMs": {
+            "title": "Connection Timeout (ms)",
+            "description": "The amount of time to wait (in milliseconds) when initially establishing a connection before giving up. If not set, the default value of the AWS SDK is used (10000ms).",
+            "type": "integer",
+            "minimum": 0
+        },
+        "socketTimeoutMs": {
+            "title": "Socket Timeout (ms)",
+            "description": "The amount of time to wait (in milliseconds) for data to be transferred over an established connection before the connection times out. If not set, the default value of the AWS SDK is used (50000ms).",
+            "type": "integer",
+            "minimum": 0
+        },
+        "requestTimeoutMs": {
+            "title": "Request Timeout (ms)",
+            "description": "The amount of time to wait (in milliseconds) for a single HTTP request to complete before giving up. If not set, the default value of the AWS SDK is used (0, disabled).",
+            "type": "integer",
+            "minimum": 0
+        },
+        "clientExecutionTimeoutMs": {
+            "title": "Client Execution Timeout (ms)",
+            "description": "The total amount of time (in milliseconds) for the client to complete the execution of an API call, including retries and backoff. If not set, the default value of the AWS SDK is used (0, disabled).",
+            "type": "integer",
+            "minimum": 0
         }
     },
     "required": ["scope", "region", "function", "invocationType", "logType"]
