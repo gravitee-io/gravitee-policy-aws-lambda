@@ -108,6 +108,30 @@
                     }
                 }
             }
+        },
+        "connectionTimeoutMs": {
+            "title": "Connection Timeout (ms)",
+            "description": "The amount of time to wait (in milliseconds) when initially establishing a connection before giving up. If not set, the default value of the AWS SDK is used (2000ms).",
+            "type": "integer",
+            "minimum": 0
+        },
+        "readTimeoutMs": {
+            "title": "Read Timeout (ms)",
+            "description": "The amount of time to wait (in milliseconds) for data to be transferred over an established connection before the connection times out. If not set, the default value of the AWS SDK is used (30000ms).",
+            "type": "integer",
+            "minimum": 0
+        },
+        "apiCallAttemptTimeoutMs": {
+            "title": "API Call Attempt Timeout (ms)",
+            "description": "The amount of time to wait (in milliseconds) for a single HTTP attempt to complete before giving up. If not set, the default value of the AWS SDK is used (disabled).",
+            "type": "integer",
+            "minimum": 0
+        },
+        "apiCallTimeoutMs": {
+            "title": "API Call Timeout (ms)",
+            "description": "The total amount of time (in milliseconds) for the client to complete the execution of an API call, including all retries. If not set, the default value of the AWS SDK is used (disabled).",
+            "type": "integer",
+            "minimum": 0
         }
     },
     "required": ["scope", "region", "function", "invocationType", "logType"]

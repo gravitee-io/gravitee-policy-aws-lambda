@@ -63,4 +63,12 @@ public class AwsLambdaPolicyConfiguration implements PolicyConfiguration {
     private List<Variable> variables = new ArrayList<>();
 
     private boolean sendToConsumer;
+
+    private Integer connectionTimeoutMs;
+
+    private Integer readTimeoutMs;
+
+    private Integer apiCallAttemptTimeoutMs;
+
+    private Integer apiCallTimeoutMs;
 }
