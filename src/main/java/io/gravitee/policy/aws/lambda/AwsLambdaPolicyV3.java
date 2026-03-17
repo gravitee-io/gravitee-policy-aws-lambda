@@ -41,6 +41,7 @@ import io.gravitee.policy.aws.lambda.el.LambdaResponse;
 import io.gravitee.policy.aws.lambda.invokers.LambdaInvokerV3;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +50,8 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
@@ -252,7 +255,43 @@ public class AwsLambdaPolicyV3 {
             awsCredentialsProvider = getAWSCredentialsProvider();
         }
 
-        return LambdaAsyncClient.builder().credentialsProvider(awsCredentialsProvider).region(Region.of(configuration.getRegion())).build();
+        var builder = LambdaAsyncClient.builder().credentialsProvider(awsCredentialsProvider).region(Region.of(configuration.getRegion()));
+
+        if (configuration.getApiCallTimeoutMs() != null || configuration.getApiCallAttemptTimeoutMs() != null) {
+            builder.overrideConfiguration(buildClientOverrideConfiguration());
+        }
+
+        if (configuration.getConnectionTimeoutMs() != null || configuration.getReadTimeoutMs() != null) {
+            builder.httpClientBuilder(buildHttpClient());
+        }
+
+        return builder.build();
+    }
+
+    ClientOverrideConfiguration buildClientOverrideConfiguration() {
+        var configBuilder = ClientOverrideConfiguration.builder();
+
+        if (configuration.getApiCallTimeoutMs() != null) {
+            configBuilder.apiCallTimeout(Duration.ofMillis(configuration.getApiCallTimeoutMs()));
+        }
+        if (configuration.getApiCallAttemptTimeoutMs() != null) {
+            configBuilder.apiCallAttemptTimeout(Duration.ofMillis(configuration.getApiCallAttemptTimeoutMs()));
+        }
+
+        return configBuilder.build();
+    }
+
+    NettyNioAsyncHttpClient.Builder buildHttpClient() {
+        var httpClientBuilder = NettyNioAsyncHttpClient.builder();
+
+        if (configuration.getConnectionTimeoutMs() != null) {
+            httpClientBuilder.connectionTimeout(Duration.ofMillis(configuration.getConnectionTimeoutMs()));
+        }
+        if (configuration.getReadTimeoutMs() != null) {
+            httpClientBuilder.readTimeout(Duration.ofMillis(configuration.getReadTimeoutMs()));
+        }
+
+        return httpClientBuilder;
     }
 
     private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider() {
