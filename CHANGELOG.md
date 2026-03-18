@@ -1,3 +1,10 @@
+# [3.2.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.1.0...3.2.0) (2026-03-18)
+
+
+### Features
+
+* add configurable aws lambda timeout ([b88427a](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/b88427a703f36d65ac8e3f44d7b67d4c38d97787))
+
 # [3.1.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.0.0...3.1.0) (2025-12-10)
 
 
