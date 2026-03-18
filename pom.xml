@@ -42,7 +42,7 @@
         <gravitee-secretprovider-hc-vault.version>2.1.0</gravitee-secretprovider-hc-vault.version>
         <gravitee-service-secrets.version>2.0.2</gravitee-service-secrets.version>
         <gravitee-secret-api.version>2.0.0</gravitee-secret-api.version>
-        <testcontainers.version>1.21.3</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <aws-java-sdk.version>2.31.26</aws-java-sdk.version>
         <hibernate-validator.version>8.0.3.Final</hibernate-validator.version>
 
