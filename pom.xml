@@ -35,7 +35,7 @@
     </parent>
 
     <properties>
-        <gravitee-apim-bom.version>4.8.9</gravitee-apim-bom.version>
+        <gravitee-apim-bom.version>4.11.4</gravitee-apim-bom.version>
         <gravitee-plugin.version>4.10.1</gravitee-plugin.version>
         <gravitee-entrypoint-http-get.version>2.1.0</gravitee-entrypoint-http-get.version>
         <gravitee-reactor-message.version>7.0.2</gravitee-reactor-message.version>
