@@ -1,3 +1,10 @@
+# [3.4.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.3.0...3.4.0) (2026-05-08)
+
+
+### Features
+
+* enable policy for mcp proxy on request phase ([be78ea6](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/be78ea66da34b209661ea5b4d04993b18c965db6))
+
 # [3.3.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.2.0...3.3.0) (2026-03-19)
 
 
