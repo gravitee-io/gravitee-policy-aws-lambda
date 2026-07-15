@@ -99,8 +99,8 @@ public class AwsLambdaPolicy extends AwsLambdaPolicyV3 implements HttpPolicy {
     }
 
     private <T extends HttpBaseExecutionContext> Single<InvokeResponse> invokeAndHandleLambda(T ctx) {
-        return Single.fromFuture(invokeLambda(this.evaluator.eval(ctx)))
-            .subscribeOn(Schedulers.io())
+        return invokeLambdaReactive(this.evaluator.eval(ctx))
+            .observeOn(Schedulers.io())
             .flatMap(invokeResponse -> {
                 log.debug("AWS Lambda function has been invoked successfully");
 

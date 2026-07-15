@@ -46,6 +46,11 @@ public class AwsLambdaTestPolicy extends AwsLambdaPolicy {
     }
 
     @Override
+    protected LambdaAsyncClient resolveLambdaClient(AwsLambdaPolicyConfiguration config) {
+        return initLambdaClient(config);
+    }
+
+    @Override
     protected LambdaAsyncClient initLambdaClient(AwsLambdaPolicyConfiguration config) {
         log.debug("Initializing AWS Lambda Async Client {} {}", config.getAccessKey(), config.getSecretKey());
 
