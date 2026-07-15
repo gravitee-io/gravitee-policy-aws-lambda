@@ -69,8 +69,6 @@ import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 @Slf4j
 public class AwsLambdaPolicyV3 {
 
-    private LambdaAsyncClient lambdaClient;
-
     protected final AwsLambdaPolicyConfiguration configuration;
 
     protected static final String TEMPLATE_VARIABLE = "lambdaResponse";
@@ -229,16 +227,23 @@ public class AwsLambdaPolicyV3 {
         };
     }
 
-    protected CompletableFuture<InvokeResponse> invokeLambda(Single<AwsLambdaPolicyConfiguration> configuration) {
-        return configuration
-            .flatMap(config -> {
-                lambdaClient = initLambdaClient(config);
-                InvokeRequest.Builder awsRequest = buildRequest(config);
+    protected LambdaAsyncClient resolveLambdaClient(AwsLambdaPolicyConfiguration config) {
+        return AwsLambdaClientCache.get(config, this::initLambdaClient);
+    }
 
-                return Single.fromFuture(lambdaClient.invoke(awsRequest.build()));
-            })
-            .toCompletionStage()
-            .toCompletableFuture();
+    /** Non-blocking V4 invocation via {@link Single#fromCompletionStage}. */
+    protected Single<InvokeResponse> invokeLambdaReactive(Single<AwsLambdaPolicyConfiguration> configuration) {
+        return configuration.flatMap(config -> {
+            LambdaAsyncClient lambdaClient = resolveLambdaClient(config);
+            InvokeRequest.Builder awsRequest = buildRequest(config);
+
+            return Single.fromCompletionStage(lambdaClient.invoke(awsRequest.build()));
+        });
+    }
+
+    /** V3 legacy overload; delegates to {@link #invokeLambdaReactive}. */
+    protected CompletableFuture<InvokeResponse> invokeLambda(Single<AwsLambdaPolicyConfiguration> configuration) {
+        return invokeLambdaReactive(configuration).toCompletionStage().toCompletableFuture();
     }
 
     private static InvokeRequest.Builder buildRequest(AwsLambdaPolicyConfiguration config) {
@@ -264,7 +269,7 @@ public class AwsLambdaPolicyV3 {
         TlsTrustManagersProvider tlsProvider = AwsLambdaSslHelper.buildTrustManagersProvider(config.getSsl());
 
         if (roleArn != null && !roleArn.isEmpty()) {
-            awsCredentialsProvider = createSTSCredentialsProvider(accessKey, secretKey, roleArn, tlsProvider);
+            awsCredentialsProvider = createSTSCredentialsProvider(config, accessKey, secretKey, roleArn, tlsProvider);
         } else {
             awsCredentialsProvider = getAWSCredentialsProvider(accessKey, secretKey);
         }
@@ -314,6 +319,7 @@ public class AwsLambdaPolicyV3 {
     }
 
     private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider(
+        AwsLambdaPolicyConfiguration config,
         String accessKey,
         String secretKey,
         String roleArn,
@@ -321,14 +327,14 @@ public class AwsLambdaPolicyV3 {
     ) {
         var stsBuilder = StsClient.builder()
             .credentialsProvider(getAWSCredentialsProvider(accessKey, secretKey))
-            .region(Region.of(configuration.getRegion()));
+            .region(Region.of(config.getRegion()));
 
         if (tlsProvider != null) {
             stsBuilder.httpClientBuilder(ApacheHttpClient.builder().tlsTrustManagersProvider(tlsProvider));
         }
 
         return StsAssumeRoleCredentialsProvider.builder()
-            .refreshRequest(() -> AssumeRoleRequest.builder().roleArn(roleArn).roleSessionName(configuration.getRoleSessionName()).build())
+            .refreshRequest(() -> AssumeRoleRequest.builder().roleArn(roleArn).roleSessionName(config.getRoleSessionName()).build())
             .stsClient(stsBuilder.build())
             .build();
     }

@@ -49,6 +49,8 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -82,8 +84,19 @@ public class AwsLambdaPolicyIntegrationTest extends AbstractPolicyTest<AwsLambda
         awsLambdaMock.start();
     }
 
+    @BeforeEach
+    void clearClientCache() {
+        AwsLambdaClientCache.invalidateAll();
+    }
+
+    @AfterEach
+    void tearDownClientCache() {
+        AwsLambdaClientCache.invalidateAll();
+    }
+
     @AfterAll
     public void tearDown() {
+        AwsLambdaClientCache.invalidateAll();
         vaultContainer.close();
 
         if (null != awsLambdaMock) {
