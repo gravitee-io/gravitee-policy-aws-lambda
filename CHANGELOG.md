@@ -1,3 +1,10 @@
+## [3.4.1](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.4.0...3.4.1) (2026-07-16)
+
+
+### Bug Fixes
+
+* **aws-policy:** blocked thread warnings ([06135e8](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/06135e8c2baa0689756b9bc4b22e3ae8705f965f))
+
 # [3.4.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.3.0...3.4.0) (2026-05-08)
 
 
