@@ -116,6 +116,56 @@ class AwsLambdaPolicyNonBlockingTest {
     }
 
     @Test
+    @DisplayName("sync work inside invoke (STS AssumeRole style) must not block the subscribing thread")
+    void sync_work_inside_invoke_does_not_block_subscribing_thread() {
+        AwsLambdaTestPolicyConfiguration config = baseConfig();
+        AwsLambdaPolicyV3 policy = policyWithMockClient(config);
+        when(lambdaClient.invoke(any(InvokeRequest.class))).thenAnswer(inv -> {
+            sleepQuietly(LAMBDA_LATENCY_MS);
+            return CompletableFuture.completedFuture(
+                InvokeResponse.builder().statusCode(200).payload(SdkBytes.fromUtf8String("{\"ok\":true}")).build()
+            );
+        });
+
+        long start = System.nanoTime();
+        TestObserver<InvokeResponse> observer = policy.invokeLambdaReactive(Single.just(config)).test();
+        long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+        assertThat(elapsedMs)
+            .as("subscribe must return immediately even when invoke() blocks the worker for %d ms", LAMBDA_LATENCY_MS)
+            .isLessThan(NON_BLOCKING_BUDGET_MS);
+        assertThat(observer.values()).as("blocked invoke must still be running on a worker thread").isEmpty();
+
+        observer.awaitDone(LAMBDA_LATENCY_MS + 2_000L, TimeUnit.MILLISECONDS).assertComplete().assertValueCount(1);
+        assertThat(observer.values().get(0).statusCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("legacy invokeLambda must not block when invoke() itself is synchronous")
+    void sync_work_inside_legacy_invoke_does_not_block_caller() throws Exception {
+        AwsLambdaTestPolicyConfiguration config = baseConfig();
+        AwsLambdaPolicyV3 policy = policyWithMockClient(config);
+        when(lambdaClient.invoke(any(InvokeRequest.class))).thenAnswer(inv -> {
+            sleepQuietly(LAMBDA_LATENCY_MS);
+            return CompletableFuture.completedFuture(
+                InvokeResponse.builder().statusCode(200).payload(SdkBytes.fromUtf8String("{\"ok\":true}")).build()
+            );
+        });
+
+        long start = System.nanoTime();
+        CompletableFuture<InvokeResponse> future = policy.invokeLambda(Single.just(config));
+        long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+
+        assertThat(elapsedMs)
+            .as("invokeLambda(Single) must return immediately even when invoke() blocks the worker")
+            .isLessThan(NON_BLOCKING_BUDGET_MS);
+        assertThat(future).isNotCompleted();
+
+        InvokeResponse response = future.get(LAMBDA_LATENCY_MS + 2_000L, TimeUnit.MILLISECONDS);
+        assertThat(response.statusCode()).isEqualTo(200);
+    }
+
+    @Test
     @DisplayName("Legacy CompletableFuture-returning invokeLambda must not block the caller")
     void legacyCompletableFutureOverloadDoesNotBlockCaller() throws Exception {
         AwsLambdaTestPolicyConfiguration config = baseConfig();
@@ -210,5 +260,14 @@ class AwsLambdaPolicyNonBlockingTest {
         assertThat(captured.get()).isNotNull();
         assertThat(captured.get().functionName()).isEqualTo("test-function");
         assertThat(captured.get().payload().asUtf8String()).isEqualTo("{\"hello\":\"world\"}");
+    }
+
+    private static void sleepQuietly(long delayMs) {
+        try {
+            Thread.sleep(delayMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
     }
 }
