@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import io.reactivex.rxjava3.core.Single;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
@@ -67,8 +68,8 @@ class AwsLambdaClientCacheTest {
             }
         };
 
-        policy.invokeLambdaReactive(Single.just(config)).test().assertComplete().assertValueCount(1);
-        policy.invokeLambdaReactive(Single.just(config)).test().assertComplete().assertValueCount(1);
+        invoke_and_await(policy, config);
+        invoke_and_await(policy, config);
 
         assertThat(creations).hasValue(1);
     }
@@ -93,8 +94,8 @@ class AwsLambdaClientCacheTest {
             }
         };
 
-        policy.invokeLambdaReactive(Single.just(configA)).test().assertComplete();
-        policy.invokeLambdaReactive(Single.just(configB)).test().assertComplete();
+        invoke_and_await(policy, configA);
+        invoke_and_await(policy, configB);
 
         assertThat(creations).hasValue(2);
     }
@@ -121,8 +122,8 @@ class AwsLambdaClientCacheTest {
             }
         };
 
-        policy.invokeLambdaReactive(Single.just(configA)).test().assertComplete();
-        policy.invokeLambdaReactive(Single.just(configB)).test().assertComplete();
+        invoke_and_await(policy, configA);
+        invoke_and_await(policy, configB);
 
         assertThat(creations).hasValue(2);
     }
@@ -144,9 +145,13 @@ class AwsLambdaClientCacheTest {
             }
         };
 
-        policy.invokeLambdaReactive(Single.just(config)).test().assertComplete();
-        policy.invokeLambdaReactive(Single.just(config)).test().assertComplete();
+        invoke_and_await(policy, config);
+        invoke_and_await(policy, config);
 
         assertThat(creations).hasValue(2);
+    }
+
+    private void invoke_and_await(AwsLambdaPolicyV3 policy, AwsLambdaPolicyConfiguration config) {
+        policy.invokeLambdaReactive(Single.just(config)).test().awaitDone(2, TimeUnit.SECONDS).assertComplete().assertValueCount(1);
     }
 }

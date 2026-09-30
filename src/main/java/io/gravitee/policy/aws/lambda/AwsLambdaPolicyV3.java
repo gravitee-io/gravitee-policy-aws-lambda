@@ -38,11 +38,16 @@ import io.gravitee.policy.aws.lambda.configuration.AwsLambdaPolicyConfiguration;
 import io.gravitee.policy.aws.lambda.configuration.PolicyScope;
 import io.gravitee.policy.aws.lambda.el.LambdaResponse;
 import io.gravitee.policy.aws.lambda.invokers.LambdaInvokerV3;
+import io.reactivex.rxjava3.core.Scheduler;
 import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -75,6 +80,15 @@ public class AwsLambdaPolicyV3 {
     private static final String LAMBDA_RESULT_ATTR = "LAMBDA_RESULT";
     private static final String REQUEST_TEMPLATE_VARIABLE = "request";
     private static final String RESPONSE_TEMPLATE_VARIABLE = "response";
+
+    private static final int DEFAULT_BLOCKING_POOL_SIZE = Math.max(4, Runtime.getRuntime().availableProcessors());
+    private static final AtomicInteger BLOCKING_THREAD_ID = new AtomicInteger();
+
+    /**
+     * Bounded pool for AWS client setup and synchronous credential refresh.
+     * Override the size with {@code gravitee.aws-lambda.blocking-pool.size}.
+     */
+    private static final Scheduler BLOCKING_SCHEDULER = Schedulers.from(newBlockingExecutor());
 
     public AwsLambdaPolicyV3(AwsLambdaPolicyConfiguration configuration) {
         this.configuration = configuration;
@@ -231,13 +245,28 @@ public class AwsLambdaPolicyV3 {
         return AwsLambdaClientCache.get(config, this::initLambdaClient);
     }
 
-    /** Non-blocking V4 invocation via {@link Single#fromCompletionStage}. */
+    /**
+     * Client construction and the synchronous credential fetch inside {@code invoke()} run on
+     * {@link #BLOCKING_SCHEDULER}. That work must not run on a Vert.x event loop. Configuration
+     * evaluation stays on the caller.
+     */
     protected Single<InvokeResponse> invokeLambdaReactive(Single<AwsLambdaPolicyConfiguration> configuration) {
-        return configuration.flatMap(config -> {
-            LambdaAsyncClient lambdaClient = resolveLambdaClient(config);
-            InvokeRequest.Builder awsRequest = buildRequest(config);
+        return configuration.flatMap(config ->
+            Single.defer(() -> {
+                LambdaAsyncClient lambdaClient = resolveLambdaClient(config);
+                InvokeRequest.Builder awsRequest = buildRequest(config);
 
-            return Single.fromCompletionStage(lambdaClient.invoke(awsRequest.build()));
+                return Single.fromCompletionStage(lambdaClient.invoke(awsRequest.build()));
+            }).subscribeOn(BLOCKING_SCHEDULER)
+        );
+    }
+
+    private static ExecutorService newBlockingExecutor() {
+        int size = Math.max(1, Integer.getInteger("gravitee.aws-lambda.blocking-pool.size", DEFAULT_BLOCKING_POOL_SIZE));
+        return Executors.newFixedThreadPool(size, runnable -> {
+            Thread thread = new Thread(runnable, "gio-aws-lambda-blocking-" + BLOCKING_THREAD_ID.incrementAndGet());
+            thread.setDaemon(true);
+            return thread;
         });
     }
 
@@ -318,7 +347,7 @@ public class AwsLambdaPolicyV3 {
         return httpClientBuilder;
     }
 
-    private StsAssumeRoleCredentialsProvider createSTSCredentialsProvider(
+    private AwsCredentialsProvider createSTSCredentialsProvider(
         AwsLambdaPolicyConfiguration config,
         String accessKey,
         String secretKey,
@@ -333,10 +362,14 @@ public class AwsLambdaPolicyV3 {
             stsBuilder.httpClientBuilder(ApacheHttpClient.builder().tlsTrustManagersProvider(tlsProvider));
         }
 
-        return StsAssumeRoleCredentialsProvider.builder()
+        StsClient stsClient = stsBuilder.build();
+        StsAssumeRoleCredentialsProvider credentialsProvider = StsAssumeRoleCredentialsProvider.builder()
             .refreshRequest(() -> AssumeRoleRequest.builder().roleArn(roleArn).roleSessionName(config.getRoleSessionName()).build())
-            .stsClient(stsBuilder.build())
+            .stsClient(stsClient)
+            .asyncCredentialUpdateEnabled(true)
             .build();
+        // Caller-supplied StsClient is not closed by StsAssumeRoleCredentialsProvider.close().
+        return new OwnedStsCredentialsProvider(credentialsProvider, stsClient);
     }
 
     private AwsCredentialsProvider getAWSCredentialsProvider(String accessKey, String secretKey) {

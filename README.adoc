@@ -155,6 +155,30 @@ DryRun – Validate parameter values and verify that the user or role has permis
 
 |===
 
+== Gateway tuning (advanced)
+
+These are **JVM system properties** on the Gateway process (for example via `JAVA_OPTS`). They are not fields in the policy UI or in `gravitee.yml`.
+
+|===
+|System property |Description |Default
+
+.^|`gravitee.aws-lambda.client-cache.size`
+|Maximum number of cached `LambdaAsyncClient` instances (keyed by policy AWS settings).
+^.^|`128`
+
+.^|`gravitee.aws-lambda.blocking-pool.size`
+|Size of the dedicated worker pool used for AWS client setup and synchronous credential work (for example STS AssumeRole refresh) so it does not run on the Vert.x event loop.
+^.^|`max(4, available processors)`
+
+|===
+
+Example:
+
+[source,bash]
+----
+JAVA_OPTS="-Dgravitee.aws-lambda.blocking-pool.size=32 -Dgravitee.aws-lambda.client-cache.size=256"
+----
+
 == Examples
 Without expression language:
 [source, json]
