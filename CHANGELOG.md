@@ -1,3 +1,10 @@
+## [3.4.2](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.4.1...3.4.2) (2026-09-30)
+
+
+### Bug Fixes
+
+* aws lambda event loop ([48fed8e](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/48fed8e76b5cafe930b709c16fcd1b652821b49e))
+
 ## [3.4.1](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.4.0...3.4.1) (2026-07-16)
 
 
