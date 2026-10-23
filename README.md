@@ -41,6 +41,7 @@ The `aws-lambda` policy can be applied to the following API types and flow phase
 * `PROXY`
 * `MESSAGE`
 * `MCP PROXY`
+* `LLM PROXY`
 
 ### Supported flow phases:
 
