@@ -1,0 +1,18 @@
+{
+    "scope": "REQUEST",
+    "region": "us-east-1",
+    "accessKey": "accessKey",
+    "secretKey": "secretKey",
+    "function": "lambda-example",
+    "payload": "{ \"key\": \"value\" }",
+    "invocationType": "RequestResponse",
+    "roleSessionName": "gravitee",
+    "logType": "None",
+    "variables": [
+        {
+            "name": "lambdaResponse",
+            "value": "{#jsonPath(#lambdaResponse.content, '$')}"
+        }
+    ],
+    "sendToConsumer": false
+}
