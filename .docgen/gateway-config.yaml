@@ -1,0 +1,6 @@
+before: .docgen/gateway-config/before.md
+snippets:
+    - title: "JVM options"
+      language: bash
+      content: >-
+          JAVA_OPTS="-Dgravitee.aws-lambda.blocking-pool.size=32 -Dgravitee.aws-lambda.client-cache.size=256"

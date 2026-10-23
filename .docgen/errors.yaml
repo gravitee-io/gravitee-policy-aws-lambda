@@ -1,0 +1,7 @@
+rows:
+    - data:
+          key: AWS_LAMBDA_INVALID_RESPONSE
+    - data:
+          key: AWS_LAMBDA_INVALID_STATUS_CODE
+    - data:
+          key: AWS_LAMBDA_TEMPLATE_VARIABLE_EXCEPTION
