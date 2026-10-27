@@ -266,6 +266,13 @@ spec:
 
 ## Changelog
 
+### [3.5.0](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.4.2...3.5.0) (2026-10-27)
+
+
+##### Features
+
+* enable policy for llm proxy on request and response phases ([8dfc238](https://github.com/gravitee-io/gravitee-policy-aws-lambda/commit/8dfc2380833b2ca752f6c8f09f7b6e6ca1cf5c32))
+
 #### [3.4.2](https://github.com/gravitee-io/gravitee-policy-aws-lambda/compare/3.4.1...3.4.2) (2026-09-30)
 
 
